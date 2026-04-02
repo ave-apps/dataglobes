@@ -326,8 +326,9 @@
     </div>
     <div class="ep-form">
       <div class="ep-code-row">
-        <span class="ep-code-lbl">Code:</span>
+        <span class="ep-code-lbl" title="Gebouw 5 koppeling: etage.kamer (bijv. 0.00=BG teampost, 1.14=kamer 14 etage 1)">G5:</span>
         <input class="ep-inp ep-code" id="epCode" placeholder="0.00" maxlength="4"
+          title="Etage.kamer in Gebouw 5 (bijv. 0.00, 1.14, 2.29)"
           oninput="this.value=this.value.replace(/[^0-9.]/g,'').substring(0,4)" />
       </div>
       <input class="ep-inp" id="epNaam" placeholder="Naam locatie" />
@@ -1693,6 +1694,7 @@ function openK(loc){
   if(loc.linkedin){
     extraHtml+=`<a class="k-linkedin" href="${loc.linkedin}" target="_blank" rel="noopener">🔗 Bekijk LinkedIn-profiel →</a>`;
   }
+  if(loc.code) extraHtml+=`<div style="margin-top:6px;font-family:'DM Mono',monospace;font-size:.72rem;color:#aaffcc;opacity:.85">🏥 G5: ${loc.code}</div>`;
   document.getElementById('kbeschr').innerHTML=loc.beschr.replace(/\n/g,'<br>')+
     (extraHtml?'<div style="margin-top:8px">'+extraHtml+'</div>':'');
   document.getElementById('ktags').innerHTML=loc.tags.map(t=>`<span class="ktag" style="color:${k};border-color:${k}40">${t}</span>`).join('');
