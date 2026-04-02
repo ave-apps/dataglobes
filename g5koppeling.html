@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G5 Koppeling — Woon-werk dashboard</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--border:#30363d;--accent:#58a6ff;
+    --groen:#3fb950;--oranje:#f0883e;--rood:#f85149;--dim:#8b949e;
+    --auto:#f0883e;--fiets:#3fb950;--ov:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:#e6edf3;font-family:'Segoe UI',sans-serif;font-size:14px;min-height:100vh}
+  header{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:12px}
+  header h1{font-size:1rem;font-weight:600;letter-spacing:.5px}
+  header span{font-size:.75rem;color:var(--dim)}
+  .prijsbalk{background:#1a2233;border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:20px;font-size:.75rem}
+  .prijsbalk b{color:var(--oranje)}
+  .prijsbalk .status{color:var(--dim);margin-left:auto;font-style:italic}
+  .main{display:grid;grid-template-columns:220px 1fr;gap:0;min-height:calc(100vh - 90px)}
+  .sidebar{background:var(--panel);border-right:1px solid var(--border);padding:16px}
+  .sidebar h2{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:12px}
+  .cb-groep{margin-bottom:16px}
+  .cb-groep label{display:block;font-size:.78rem;color:var(--dim);margin-bottom:6px;text-transform:uppercase;font-size:.65rem;letter-spacing:.8px}
+  .cb-item{display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:.82rem}
+  .cb-item input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .content{padding:20px}
+  .stats-rij{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .stat-kaart{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+  .stat-kaart .label{font-size:.68rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:6px}
+  .stat-kaart .waarde{font-size:1.5rem;font-weight:700}
+  .stat-kaart .sub{font-size:.72rem;color:var(--dim);margin-top:3px}
+  .tabel-wrap{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .tabel-wrap h2{padding:12px 16px;font-size:.8rem;border-bottom:1px solid var(--border);color:var(--dim);text-transform:uppercase;letter-spacing:.8px}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:10px 14px;font-size:.68rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);border-bottom:1px solid var(--border);font-weight:500}
+  td{padding:10px 14px;font-size:.82rem;border-bottom:1px solid #21262d}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#1c2128}
+  .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:600}
+  .badge.auto{background:#f0883e22;color:var(--auto);border:1px solid #f0883e44}
+  .badge.fiets{background:#3fb95022;color:var(--fiets);border:1px solid #3fb95044}
+  .badge.ov{background:#58a6ff22;color:var(--ov);border:1px solid #58a6ff44}
+  .etage-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-family:'DM Mono',monospace;background:#aaffcc22;color:#aaffcc;border:1px solid #aaffcc44}
+  .co2-bar-wrap{width:100%;background:#21262d;border-radius:4px;height:6px;margin-top:4px}
+  .co2-bar{height:6px;border-radius:4px;background:var(--groen)}
+  .laad-knop{background:#1a2233;border:1px dashed var(--border);border-radius:8px;padding:20px;text-align:center;margin-bottom:20px;cursor:pointer;transition:.2s}
+  .laad-knop:hover{border-color:var(--accent);color:var(--accent)}
+  .laad-knop input{display:none}
+  .footer-note{font-size:.7rem;color:var(--dim);margin-top:16px;padding:10px 0;border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>🏥</div>
+  <h1>G5 Koppeling — Woon-werk dashboard</h1>
+  <span>Gebouw 5B · SEIN Epilepsiezorg</span>
+</header>
+
+<div class="prijsbalk" id="prijsbalk">
+  <span>⛽ Euro95: <b id="prijs-e95">laden…</b></span>
+  <span>🚗 Diesel: <b id="prijs-diesel">laden…</b></span>
+  <span>🌿 CO₂ auto: <b>120 g/km</b></span>
+  <span>🌿 CO₂ OV: <b>40 g/km</b></span>
+  <span>🚲 Fiets: <b>€0 · 0g CO₂</b></span>
+  <span class="status" id="prijs-status">prijzen ophalen…</span>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <h2>Filters</h2>
+
+    <div class="cb-groep">
+      <label>Vervoer</label>
+      <div class="cb-item"><input type="checkbox" id="f-auto" checked onchange="herbereken()"><div class="dot" style="background:var(--auto)"></div>Auto</div>
+      <div class="cb-item"><input type="checkbox" id="f-fiets" checked onchange="herbereken()"><div class="dot" style="background:var(--fiets)"></div>Fiets</div>
+      <div class="cb-item"><input type="checkbox" id="f-ov" checked onchange="herbereken()"><div class="dot" style="background:var(--ov)"></div>OV</div>
+    </div>
+
+    <div class="cb-groep">
+      <label>Etage</label>
+      <div id="etage-filters"></div>
+    </div>
+
+    <div class="cb-groep">
+      <label>Toon kolommen</label>
+      <div class="cb-item"><input type="checkbox" id="k-km" checked onchange="toonKolommen()">Afstand (km)</div>
+      <div class="cb-item"><input type="checkbox" id="k-kosten" checked onchange="toonKolommen()">Kosten (€)</div>
+      <div class="cb-item"><input type="checkbox" id="k-co2" checked onchange="toonKolommen()">CO₂ (g)</div>
+    </div>
+
+    <div style="margin-top:20px">
+      <label class="laad-knop" title="Laad GNLES export JSON">
+        📂 Laad GNLES-export
+        <input type="file" accept=".json" onchange="laadJSON(event)">
+        <div style="font-size:.7rem;color:var(--dim);margin-top:4px">gnles-eigen-pins.json</div>
+      </label>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="stats-rij" id="stats-rij">
+      <!-- ingevuld door JS -->
+    </div>
+    <div class="tabel-wrap">
+      <h2>Collega's in beeld</h2>
+      <table id="tabel">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>Woonplaats</th>
+            <th>G5</th>
+            <th>Vervoer</th>
+            <th class="k-km">Enkele reis</th>
+            <th class="k-km">Dag (heen+terug)</th>
+            <th class="k-kosten">Kosten/dag</th>
+            <th class="k-co2">CO₂/dag</th>
+            <th class="k-co2">CO₂-balk</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="footer-note" id="footer-note"></div>
+  </div>
+</div>
+
+<script>
+// ── SEIN G5 coördinaten (Heemstede) ──
+const SEIN_LAT = 52.3456;
+const SEIN_LON = 4.6189;
+
+// ── Testdata: fictieve collega's ──
+let pins = [
+  {id:'t1', naam:'Albert van Esveld',  stad:'Velserbroek',  lat:52.4421, lon:4.6318, code:'0.00', vervoer:'fiets'},
+  {id:'t2', naam:'Tinus Test-1',       stad:'Haarlem',      lat:52.3874, lon:4.6462, code:'0.00', vervoer:'fiets'},
+  {id:'t3', naam:'Tinus Test-2',       stad:'Beverwijk',    lat:52.4878, lon:4.6553, code:'1.00', vervoer:'auto'},
+  {id:'t4', naam:'Tinus Test-3',       stad:'IJmuiden',     lat:52.4619, lon:4.6089, code:'1.00', vervoer:'auto'},
+  {id:'t5', naam:'Tinus Test-4',       stad:'Heemskerk',    lat:52.5084, lon:4.6739, code:'0.00', vervoer:'ov'},
+  {id:'t6', naam:'Tinus Test-5',       stad:'Castricum',    lat:52.5453, lon:4.6586, code:'1.00', vervoer:'ov'},
+  {id:'t7', naam:'Tinus Test-6',       stad:'Hoofddorp',    lat:52.3022, lon:4.6933, code:'0.00', vervoer:'auto'},
+  {id:'t8', naam:'Tinus Test-7',       stad:'Santpoort',    lat:52.4289, lon:4.6401, code:'1.00', vervoer:'fiets'},
+];
+
+// ── Prijzen (worden live opgehaald) ──
+let prijsE95    = null;
+let prijsDiesel = null;
+const VERBRUIK  = 9;    // liter/100km
+const CO2_AUTO  = 120;  // g/km
+const CO2_OV    = 40;   // g/km
+const OV_PER_KM = 0.15; // €/km globaal
+
+// ── Hemelsbreed → wegafstand factor ──
+const WEGFACTOR = 1.3;
+
+function haversine(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function enkelKm(pin){
+  return haversine(pin.lat,pin.lon,SEIN_LAT,SEIN_LON)*WEGFACTOR;
+}
+
+function berekenKosten(km,vervoer){
+  if(vervoer==='fiets') return 0;
+  if(vervoer==='ov')    return km*OV_PER_KM;
+  const prijs=prijsE95||2.05;
+  return (km/100)*VERBRUIK*prijs;
+}
+
+function berekenCO2(km,vervoer){
+  if(vervoer==='fiets') return 0;
+  if(vervoer==='ov')    return km*CO2_OV;
+  return km*CO2_AUTO;
+}
+
+// ── Benzineprijs ophalen via CORS-proxy → brandstofprijzen.nl ──
+async function haalPrijzenOp(){
+  try{
+    const url='https://api.allorigins.win/get?url='+encodeURIComponent('https://www.unitedconsumers.com/tanken/brandstof-prijzen.htm');
+    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    const d=await r.json();
+    const html=d.contents;
+    // Zoek Euro95 prijs (formaat: 1,999 of 2,039)
+    const m95=html.match(/Euro\s*95[^€]*€\s*([\d,]+)/i);
+    const mdi=html.match(/Diesel[^€]*€\s*([\d,]+)/i);
+    if(m95) prijsE95=parseFloat(m95[1].replace(',','.'));
+    if(mdi) prijsDiesel=parseFloat(mdi[1].replace(',','.'));
+    // Fallback: probeer andere patronen
+    if(!prijsE95){
+      const alt=html.match(/(1|2)[,\.]\d{3}/g);
+      if(alt) prijsE95=parseFloat(alt[0].replace(',','.'));
+    }
+    if(prijsE95){
+      document.getElementById('prijs-e95').textContent='€ '+prijsE95.toFixed(3);
+      document.getElementById('prijs-status').textContent='live · unitedconsumers.com';
+    } else {
+      goedkeurSchatting();
+    }
+    if(prijsDiesel) document.getElementById('prijs-diesel').textContent='€ '+prijsDiesel.toFixed(3);
+  } catch(e){
+    goedkeurSchatting();
+  }
+  herbereken();
+}
+
+function goedkeurSchatting(){
+  prijsE95=2.05; prijsDiesel=1.89;
+  document.getElementById('prijs-e95').textContent='€ 2,050 *';
+  document.getElementById('prijs-diesel').textContent='€ 1,890 *';
+  document.getElementById('prijs-status').textContent='* schatting (live ophalen mislukt)';
+}
+
+// ── Etage-filters opbouwen ──
+function bouwEtageFilters(){
+  const etages=[...new Set(pins.map(p=>p.code).filter(Boolean))].sort();
+  const wrap=document.getElementById('etage-filters');
+  wrap.innerHTML=etages.map(e=>`
+    <div class="cb-item">
+      <input type="checkbox" id="f-e-${e.replace('.','_')}" checked onchange="herbereken()">
+      <span class="etage-badge">${e}</span>
+    </div>`).join('');
+}
+
+function actieveEtages(){
+  return [...document.querySelectorAll('[id^="f-e-"]')]
+    .filter(cb=>cb.checked)
+    .map(cb=>cb.id.replace('f-e-','').replace('_','.'));
+}
+
+// ── Hoofdberekening ──
+function herbereken(){
+  const fAuto  = document.getElementById('f-auto').checked;
+  const fFiets = document.getElementById('f-fiets').checked;
+  const fOV    = document.getElementById('f-ov').checked;
+  const etages = actieveEtages();
+
+  const gefilterd=pins.filter(p=>{
+    const vOk=(p.vervoer==='auto'&&fAuto)||(p.vervoer==='fiets'&&fFiets)||(p.vervoer==='ov'&&fOV);
+    const eOk=!p.code||etages.includes(p.code);
+    return vOk&&eOk;
+  });
+
+  // Stats
+  let totKm=0,totKosten=0,totCO2=0;
+  gefilterd.forEach(p=>{
+    const enkel=enkelKm(p);
+    const dag=enkel*2;
+    totKm+=dag;
+    totKosten+=berekenKosten(dag,p.vervoer);
+    totCO2+=berekenCO2(dag,p.vervoer);
+  });
+
+  const maxCO2=pins.reduce((m,p)=>Math.max(m,berekenCO2(enkelKm(p)*2,p.vervoer)),0);
+
+  document.getElementById('stats-rij').innerHTML=`
+    <div class="stat-kaart">
+      <div class="label">Collega's zichtbaar</div>
+      <div class="waarde">${gefilterd.length}</div>
+      <div class="sub">van ${pins.length} totaal</div>
+    </div>
+    <div class="stat-kaart">
+      <div class="label">Totaal km vandaag</div>
+      <div class="waarde">${totKm.toFixed(0)} <span style="font-size:.9rem">km</span></div>
+      <div class="sub">heen + terug, alle vervoer</div>
+    </div>
+    <div class="stat-kaart">
+      <div class="label">Totaal kosten</div>
+      <div class="waarde">€ ${totKosten.toFixed(2)}</div>
+      <div class="sub">benzine + OV · fiets €0</div>
+    </div>
+    <div class="stat-kaart">
+      <div class="label">Totaal CO₂</div>
+      <div class="waarde">${(totCO2/1000).toFixed(2)} <span style="font-size:.9rem">kg</span></div>
+      <div class="sub">${totCO2.toFixed(0)} gram</div>
+    </div>`;
+
+  // Tabel
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML=gefilterd.map(p=>{
+    const enkel=enkelKm(p);
+    const dag=enkel*2;
+    const kosten=berekenKosten(dag,p.vervoer);
+    const co2=berekenCO2(dag,p.vervoer);
+    const pct=maxCO2>0?Math.round(co2/maxCO2*100):0;
+    const barKleur=p.vervoer==='fiets'?'var(--fiets)':p.vervoer==='ov'?'var(--ov)':'var(--auto)';
+    return `<tr>
+      <td>${p.naam}</td>
+      <td>${p.stad}</td>
+      <td><span class="etage-badge">${p.code||'—'}</span></td>
+      <td><span class="badge ${p.vervoer}">${p.vervoer}</span></td>
+      <td class="k-km">${enkel.toFixed(1)} km</td>
+      <td class="k-km">${dag.toFixed(1)} km</td>
+      <td class="k-kosten">${kosten>0?'€ '+kosten.toFixed(2):'—'}</td>
+      <td class="k-co2">${co2>0?co2.toFixed(0)+' g':'0 g'}</td>
+      <td class="k-co2" style="min-width:80px">
+        <div class="co2-bar-wrap"><div class="co2-bar" style="width:${pct}%;background:${barKleur}"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const prijs=prijsE95?`€ ${prijsE95.toFixed(3)}/L`:'schatting € 2,050/L';
+  document.getElementById('footer-note').innerHTML=
+    `Afstand: hemelsbreed × ${WEGFACTOR} (wegfactor) · Auto: ${VERBRUIK}L/100km · ${prijs} · CO₂ auto: ${CO2_AUTO}g/km · CO₂ OV: ${CO2_OV}g/km · OV: € ${OV_PER_KM}/km`;
+}
+
+function toonKolommen(){
+  const km    = document.getElementById('k-km').checked;
+  const kost  = document.getElementById('k-kosten').checked;
+  const co2   = document.getElementById('k-co2').checked;
+  document.querySelectorAll('.k-km').forEach(el=>el.style.display=km?'':'none');
+  document.querySelectorAll('.k-kosten').forEach(el=>el.style.display=kost?'':'none');
+  document.querySelectorAll('.k-co2').forEach(el=>el.style.display=co2?'':'none');
+}
+
+// ── GNLES JSON laden ──
+function laadJSON(evt){
+  const file=evt.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const importPins=data.gnles_eigenPins||[];
+      const metCode=importPins.filter(p=>p.code&&p.lat&&p.lon);
+      if(!metCode.length){alert('Geen pins met G5-code en coördinaten gevonden.');return;}
+      pins=metCode.map(p=>({...p,vervoer:p.vervoer||'auto'}));
+      bouwEtageFilters();
+      herbereken();
+    } catch(err){alert('Fout bij laden JSON: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+// ── Init ──
+bouwEtageFilters();
+haalPrijzenOp();
+</script>
+</body>
+</html>
