@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Boulder-Planeet — Klimmen in Nederland</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --bg:#04060d; --sur:rgba(10,14,24,0.95); --brd:#1a2438;
+    --txt:#dde4f0; --dim:#5a6e98; --acc:#4a9eff; --gld:#f0c060;
+    --binnen:#4a9eff; --buiten:#2ed67a; --comp:#ff4a5e; --jeugd:#f0c060; --toprope:#b06bff;
+    --winkel:#ff8c42; --cursus:#42d4a8; --school:#e86bff; --instituut:#ffd25e;
+    --land:#0d2040; --zee:#060e1c; --kust:#3a8eff; --rivier:#1a4a88;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);
+    height:100dvh;overflow:hidden;display:flex;flex-direction:column;touch-action:none}
+
+  header{display:flex;align-items:center;justify-content:space-between;
+    padding:9px 14px;background:var(--sur);border-bottom:1px solid var(--brd);
+    z-index:20;gap:8px;flex-shrink:0;backdrop-filter:blur(12px)}
+  .htitle{font-family:'DM Serif Display',serif;font-size:.9rem;white-space:nowrap;line-height:1.2}
+  .htitle em{color:var(--acc);font-style:italic}
+  .hsub{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);margin-top:1px}
+  .ztag{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);
+    background:rgba(26,36,56,.7);border:1px solid var(--brd);border-radius:14px;
+    padding:4px 10px;white-space:nowrap;flex-shrink:0}
+  .ztag b{color:var(--gld)}
+  .hbtns{display:flex;gap:5px;flex-shrink:0}
+  .hb{padding:5px 9px;border:1px solid var(--brd);background:rgba(10,14,24,.8);
+    color:var(--dim);border-radius:5px;font-family:'DM Mono',monospace;font-size:.65rem;
+    cursor:pointer;transition:all .15s;touch-action:manipulation}
+  .hb:hover,.hb.on{border-color:var(--acc);color:var(--acc)}
+
+  #wrap{flex:1;position:relative;overflow:hidden}
+  canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+
+  /* ZOOM TRAPPEN */
+  .ztraps{position:absolute;right:11px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:4px;z-index:10}
+  .ztb{width:46px;height:46px;border-radius:9px;border:1px solid var(--brd);
+    background:rgba(8,12,22,.9);color:var(--dim);font-family:'DM Mono',monospace;
+    cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:1px;transition:all .15s;backdrop-filter:blur(8px);touch-action:manipulation}
+  .ztb .zi{font-size:1rem;line-height:1}
+  .ztb .zk{font-size:.5rem;opacity:.55;letter-spacing:.02em}
+  .ztb.on{border-color:var(--gld);color:var(--gld);background:rgba(240,192,96,.1)}
+
+  /* FILTER */
+  .fbar{position:absolute;left:9px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:4px;z-index:10}
+  .fb{display:flex;align-items:center;gap:5px;padding:5px 9px;
+    border:1px solid var(--brd);background:rgba(8,12,22,.88);
+    border-radius:5px;font-family:'DM Mono',monospace;font-size:.6rem;
+    cursor:pointer;transition:all .15s;backdrop-filter:blur(8px);
+    white-space:nowrap;touch-action:manipulation;user-select:none}
+  .fb-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .fb.off{opacity:.22}
+
+  /* INFO KAARTJE */
+  #kaart{position:absolute;bottom:0;left:0;right:0;
+    background:rgba(6,9,18,.98);border-top:1px solid var(--brd);
+    padding:12px 16px 20px;z-index:30;
+    transform:translateY(102%);transition:transform .26s cubic-bezier(.28,0,.18,1);
+    max-height:52dvh;overflow-y:auto;backdrop-filter:blur(20px)}
+  #kaart.open{transform:translateY(0)}
+  .ktrek{width:32px;height:3px;background:var(--brd);border-radius:2px;margin:0 auto 10px}
+  .kband{height:3px;border-radius:1px;margin-bottom:9px}
+  .ktop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .knaam{font-family:'DM Serif Display',serif;font-size:1rem;line-height:1.3;flex:1}
+  .ksluit{width:26px;height:26px;border-radius:50%;border:1px solid var(--brd);
+    background:transparent;color:var(--dim);font-size:.75rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation}
+  .kcat{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;
+    text-transform:uppercase;margin-bottom:3px;opacity:.7}
+  .kstad{font-size:.72rem;color:var(--dim);margin-bottom:8px;font-family:'DM Mono',monospace}
+  .kbeschr{font-size:.78rem;line-height:1.65;color:#9aadcc;
+    border-left:2px solid var(--brd);padding-left:9px;margin-bottom:10px}
+  .ktags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .ktag{padding:2px 7px;border-radius:3px;font-size:.58rem;
+    font-family:'DM Mono',monospace;border:1px solid currentColor;opacity:.75}
+  .kvb{background:rgba(255,255,255,.03);border:1px solid var(--brd);
+    border-radius:7px;padding:8px 11px;margin-bottom:5px}
+  .kvb-met{font-size:.7rem;color:var(--txt);font-weight:600;margin-bottom:2px}
+  .kvb-w{font-size:.68rem;color:var(--gld);line-height:1.5}
+  .kurl{margin-bottom:10px}
+  .kurl a{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--acc);
+    text-decoration:none;word-break:break-all}
+  .kurl a:hover{text-decoration:underline}
+
+  #btip{position:absolute;background:rgba(6,9,18,.97);border:1px solid var(--gld);
+    border-radius:7px;padding:8px 12px;font-size:.7rem;max-width:220px;
+    z-index:25;pointer-events:none;opacity:0;transition:opacity .15s;
+    color:var(--txt);line-height:1.5;word-break:break-word}
+  #btip.on{opacity:1}
+  #btip strong{color:var(--gld)}
+
+  #hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+    font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim);
+    background:rgba(10,14,24,.88);padding:5px 13px;border-radius:14px;
+    border:1px solid var(--brd);pointer-events:none;white-space:nowrap;
+    z-index:10;transition:opacity .3s}
+  #hint.hide{opacity:0}
+
+  /* Laadscherm */
+  #loader{position:absolute;inset:0;background:var(--bg);display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:50}
+  .lds{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--dim)}
+  .ldbar{width:160px;height:2px;background:var(--brd);border-radius:1px;overflow:hidden}
+  .ldfil{height:100%;background:var(--acc);border-radius:1px;
+    animation:ldani 1.4s ease-in-out infinite}
+  @keyframes ldani{0%{width:0;margin-left:0}50%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
+
+  /* ── EIGEN PINS PANEL ───────────────────────────────────── */
+  #epPanel{position:absolute;top:0;right:0;bottom:0;width:min(320px,90vw);
+    background:rgba(6,9,18,.98);border-left:1px solid var(--brd);
+    z-index:40;display:flex;flex-direction:column;
+    transform:translateX(102%);transition:transform .28s cubic-bezier(.28,0,.18,1);
+    backdrop-filter:blur(20px)}
+  #epPanel.open{transform:translateX(0)}
+  .ep-hdr{display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-bottom:1px solid var(--brd);flex-shrink:0}
+  .ep-titel{font-family:'DM Serif Display',serif;font-size:.88rem}
+  .ep-sluit{width:26px;height:26px;border-radius:50%;border:1px solid var(--brd);
+    background:transparent;color:var(--dim);font-size:.7rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+  .ep-form{padding:12px 14px;border-bottom:1px solid var(--brd);flex-shrink:0;display:flex;flex-direction:column;gap:7px}
+  .ep-inp{background:rgba(10,14,24,.9);border:1px solid var(--brd);border-radius:5px;
+    color:var(--txt);font-family:'DM Mono',monospace;font-size:.68rem;
+    padding:6px 9px;width:100%;outline:none;transition:border-color .15s}
+  .ep-inp:focus{border-color:var(--acc)}
+  .ep-inp::placeholder{color:var(--dim);opacity:.6}
+  .ep-row{display:flex;gap:6px}
+  .ep-sel{background:rgba(10,14,24,.9);border:1px solid var(--brd);border-radius:5px;
+    color:var(--txt);font-family:'DM Mono',monospace;font-size:.68rem;
+    padding:6px 9px;flex:1;outline:none;cursor:pointer}
+  .ep-geo-btn{padding:6px 11px;border:1px solid var(--acc);background:rgba(74,158,255,.12);
+    color:var(--acc);border-radius:5px;font-family:'DM Mono',monospace;font-size:.65rem;
+    cursor:pointer;white-space:nowrap;touch-action:manipulation;transition:all .15s}
+  .ep-geo-btn:hover{background:rgba(74,158,255,.22)}
+  .ep-geo-status{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim);min-height:14px}
+  .ep-add-btn{padding:7px;border:1px solid var(--som);background:rgba(46,214,122,.12);
+    color:var(--som);border-radius:5px;font-family:'DM Mono',monospace;font-size:.68rem;
+    cursor:pointer;touch-action:manipulation;transition:all .15s;text-align:center}
+  .ep-add-btn:hover{background:rgba(46,214,122,.22)}
+  .ep-lijst{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+  .ep-item{background:rgba(10,14,24,.7);border:1px solid var(--brd);border-radius:6px;
+    padding:8px 10px;display:flex;align-items:flex-start;gap:8px}
+  .ep-item-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px}
+  .ep-item-info{flex:1;min-width:0}
+  .ep-item-naam{font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ep-item-meta{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--dim);margin-top:1px}
+  .ep-item-acties{display:flex;gap:4px;flex-shrink:0}
+  .ep-edit-btn,.ep-del-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--brd);
+    background:transparent;color:var(--dim);font-size:.6rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .15s}
+  .ep-edit-btn:hover{border-color:var(--acc);color:var(--acc)}
+  .ep-del-btn:hover{border-color:var(--sein);color:var(--sein)}
+  .ep-leeg{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);
+    text-align:center;padding:20px 0;opacity:.5}
+
+  /* VBN-panel (relaties) */
+  #vbPanel{position:absolute;top:0;right:0;bottom:0;width:min(320px,90vw);
+    background:rgba(6,9,18,.98);border-left:1px solid var(--brd);
+    z-index:41;display:flex;flex-direction:column;
+    transform:translateX(102%);transition:transform .28s cubic-bezier(.28,0,.18,1);
+    backdrop-filter:blur(20px)}
+  #vbPanel.open{transform:translateX(0)}
+  .vb-hdr{display:flex;align-items:center;justify-content:space-between;
+    padding:11px 14px;border-bottom:1px solid var(--brd);flex-shrink:0}
+  .vb-titel{font-family:'DM Serif Display',serif;font-size:.88rem}
+  .vb-sluit{width:26px;height:26px;border-radius:50%;border:1px solid var(--brd);
+    background:transparent;color:var(--dim);font-size:.7rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+  .vb-form{padding:12px 14px;border-bottom:1px solid var(--brd);flex-shrink:0;display:flex;flex-direction:column;gap:7px}
+  .vb-sel{background:rgba(10,14,24,.9);border:1px solid var(--brd);border-radius:5px;
+    color:var(--txt);font-family:'DM Mono',monospace;font-size:.68rem;
+    padding:6px 9px;width:100%;outline:none;cursor:pointer}
+  .vb-add-btn{padding:7px;border:1px solid var(--gld);background:rgba(240,192,96,.1);
+    color:var(--gld);border-radius:5px;font-family:'DM Mono',monospace;font-size:.68rem;
+    cursor:pointer;touch-action:manipulation;transition:all .15s;text-align:center}
+  .vb-add-btn:hover{background:rgba(240,192,96,.2)}
+  .vb-lijst{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px}
+  .vb-item{background:rgba(10,14,24,.7);border:1px solid #f0c06030;border-radius:6px;
+    padding:8px 10px;display:flex;align-items:flex-start;gap:8px}
+  .vb-item-info{flex:1;min-width:0}
+  .vb-item-lbl{font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;line-height:1.4}
+  .vb-item-meta{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--dim);margin-top:2px}
+  .vb-item-acties{display:flex;gap:4px;flex-shrink:0}
+  .vb-del-btn{width:22px;height:22px;border-radius:4px;border:1px solid var(--brd);
+    background:transparent;color:var(--dim);font-size:.6rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .15s}
+  .vb-del-btn:hover{border-color:var(--sein);color:var(--sein)}
+  .vb-leeg{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--dim);
+    text-align:center;padding:20px 0;opacity:.5}
+
+  /* EDIT-via-kaartje overlay (in kaart) */
+  #editOverlay{display:none;position:absolute;inset:0;background:rgba(6,9,18,.97);
+    z-index:35;padding:14px 16px;flex-direction:column;gap:8px;overflow-y:auto}
+  #editOverlay.open{display:flex}
+  .eo-titel{font-family:'DM Serif Display',serif;font-size:.9rem;margin-bottom:2px}
+  .eo-inp{background:rgba(10,14,24,.9);border:1px solid var(--brd);border-radius:5px;
+    color:var(--txt);font-family:'DM Mono',monospace;font-size:.68rem;
+    padding:6px 9px;width:100%;outline:none;transition:border-color .15s}
+  .eo-inp:focus{border-color:var(--acc)}
+  .eo-btns{display:flex;gap:6px;margin-top:4px}
+  .eo-save{flex:1;padding:8px;border:1px solid var(--som);background:rgba(46,214,122,.12);
+    color:var(--som);border-radius:5px;font-family:'DM Mono',monospace;font-size:.7rem;
+    cursor:pointer;touch-action:manipulation}
+  .eo-cancel{flex:1;padding:8px;border:1px solid var(--brd);background:transparent;
+    color:var(--dim);border-radius:5px;font-family:'DM Mono',monospace;font-size:.7rem;
+    cursor:pointer;touch-action:manipulation}
+
+  /* TOAST */
+  #toast{position:absolute;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:rgba(10,16,30,.97);border:1px solid var(--acc);border-radius:8px;
+    padding:8px 16px;font-family:'DM Mono',monospace;font-size:.68rem;color:var(--txt);
+    z-index:60;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;
+    white-space:nowrap;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.ok{border-color:var(--som)}
+  #toast.err{border-color:var(--sein)}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="htitle">🧗 <em>Boulder-Planeet</em></div>
+    <div class="hsub">Klimmen &amp; Boulderen Ecosysteem Nederland · ∅ ~400km · omtrek ~4000km</div>
+  </div>
+  <div class="ztag">Zoom: <b id="zlbl">Landelijk</b> <span id="zkm" style="opacity:.45">· 100km</span></div>
+  <div class="hbtns">
+    <button class="hb" id="burl" onclick="togURL()" title="URL-toggle: toon/verberg website-links">🔗</button>
+    <button class="hb" id="beigen" onclick="togEigen()" title="Eigen data: AAN/UIT">📦</button>
+    <button class="hb" id="bep" onclick="openEP()" title="Eigen pins">📌</button>
+    <button class="hb" id="bvb" onclick="openVB()" title="Eigen relaties">↔</button>
+    <button class="hb" onclick="exporteerPins()" title="Exporteer eigen pins + relaties naar JSON">⬇</button>
+    <button class="hb" onclick="document.getElementById('importInput').click()" title="Importeer eigen pins + relaties uit JSON">⬆</button>
+    <input type="file" id="importInput" accept=".json" style="display:none" onchange="importeerPins(event)">
+    <button class="hb on" id="brot" onclick="togRot()">⟳</button>
+    <button class="hb" onclick="resetV()">⌂</button>
+  </div>
+</header>
+
+<div id="wrap">
+  <canvas id="c"></canvas>
+
+  <div id="loader">
+    <div class="lds">Klimlocaties laden…</div>
+    <div class="ldbar"><div class="ldfil"></div></div>
+  </div>
+
+  <div class="fbar">
+    <div class="fb on" data-cat="binnen" style="color:var(--binnen);border-color:var(--binnen)" onclick="togF('binnen')">
+      <span class="fb-d" style="background:var(--binnen)"></span>Binnen
+    </div>
+    <div class="fb on" data-cat="buiten" style="color:var(--buiten);border-color:var(--buiten)" onclick="togF('buiten')">
+      <span class="fb-d" style="background:var(--buiten)"></span>Buiten
+    </div>
+    <div class="fb on" data-cat="competitie" style="color:var(--comp);border-color:var(--comp)" onclick="togF('competitie')">
+      <span class="fb-d" style="background:var(--comp)"></span>Competitie
+    </div>
+    <div class="fb on" data-cat="jeugd" style="color:var(--jeugd);border-color:var(--jeugd)" onclick="togF('jeugd')">
+      <span class="fb-d" style="background:var(--jeugd)"></span>Jeugd
+    </div>
+    <div class="fb on" data-cat="toprope" style="color:var(--toprope);border-color:var(--toprope)" onclick="togF('toprope')">
+      <span class="fb-d" style="background:var(--toprope)"></span>Toprope
+    </div>
+    <div class="fb on" data-cat="winkel" style="color:var(--winkel);border-color:var(--winkel)" onclick="togF('winkel')">
+      <span class="fb-d" style="background:var(--winkel)"></span>Winkel
+    </div>
+    <div class="fb on" data-cat="cursus" style="color:var(--cursus);border-color:var(--cursus)" onclick="togF('cursus')">
+      <span class="fb-d" style="background:var(--cursus)"></span>Cursus
+    </div>
+    <div class="fb on" data-cat="school" style="color:var(--school);border-color:var(--school)" onclick="togF('school')">
+      <span class="fb-d" style="background:var(--school)"></span>School
+    </div>
+    <div class="fb on" data-cat="instituut" style="color:var(--instituut);border-color:var(--instituut)" onclick="togF('instituut')">
+      <span class="fb-d" style="background:var(--instituut)"></span>Instituut
+    </div>
+    <div class="fb on" data-cat="eigen" style="color:#aaffcc;border-color:#aaffcc" onclick="togF('eigen')">
+      <span class="fb-d" style="background:#aaffcc"></span>Eigen
+    </div>
+  </div>
+
+  <div class="ztraps">
+    <button class="ztb on" id="zt1" onclick="setTrap(1)"><span class="zi">🌍</span><span class="zk">100km</span></button>
+    <button class="ztb" id="zt2" onclick="setTrap(2)"><span class="zi">🔍</span><span class="zk">10km</span></button>
+    <button class="ztb" id="zt3" onclick="setTrap(3)"><span class="zi">📍</span><span class="zk">1km</span></button>
+  </div>
+
+  <div id="kaart">
+    <div class="ktrek"></div>
+    <div class="kband" id="kband"></div>
+    <div class="kcat" id="kcat"></div>
+    <div class="ktop"><div class="knaam" id="knaam"></div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button class="ksluit" id="kEditBtn" onclick="openEditViaKaart()" style="display:none;font-size:.6rem" title="Bewerken">✏️</button>
+        <button class="ksluit" id="kDelBtn" onclick="verwijderViaKaart()" style="display:none;font-size:.6rem;color:var(--sein)" title="Verwijderen">🗑</button>
+        <button class="ksluit" onclick="sluit()">✕</button>
+      </div>
+    </div>
+    <div class="kstad" id="kstad"></div>
+    <div class="kurl" id="kurl" style="display:none"></div>
+    <div class="kbeschr" id="kbeschr"></div>
+    <div class="ktags" id="ktags"></div>
+    <div id="kvbs"></div>
+  </div>
+
+  <div id="btip"></div>
+  <div id="hint">Draaien · Tik klimhal · Pinch/scroll = zoom</div>
+
+  <!-- EIGEN PINS PANEL -->
+  <div id="epPanel">
+    <div class="ep-hdr">
+      <div class="ep-titel">📌 Eigen pins</div>
+      <button class="ep-sluit" onclick="sluitEP()">✕</button>
+    </div>
+    <div class="ep-form">
+      <input class="ep-inp" id="epNaam" placeholder="Naam locatie" />
+      <div class="ep-row">
+        <select class="ep-sel" id="epCat">
+          <option value="eigen">Eigen</option>
+          <option value="binnen">Boulderhal</option>
+          <option value="buiten">Buitenklimmen</option>
+          <option value="competitie">Competitie</option>
+          <option value="jeugd">Jeugd</option>
+          <option value="toprope">Toprope / Voorklim</option>
+          <option value="winkel">Winkel</option>
+          <option value="cursus">Cursus / Workshop</option>
+          <option value="school">School</option>
+          <option value="instituut">Instituut</option>
+        </select>
+      </div>
+      <input class="ep-inp" id="epAdres" placeholder="Adres of stad (bijv: Haarlem)" />
+      <div class="ep-row">
+        <button class="ep-geo-btn" onclick="geocodeer()">🔍 Zoek op kaart</button>
+        <div style="flex:1"></div>
+      </div>
+      <div class="ep-geo-status" id="epGeoStatus"></div>
+      <input class="ep-inp" id="epBeschr" placeholder="Beschrijving (optioneel)" />
+      <button class="ep-add-btn" onclick="voegEigenPinToe()">+ Toevoegen</button>
+    </div>
+    <div class="ep-lijst" id="epLijst"></div>
+  </div>
+
+  <!-- EIGEN RELATIES PANEL -->
+  <div id="vbPanel">
+    <div class="vb-hdr">
+      <div class="vb-titel">↔ Eigen relaties</div>
+      <button class="vb-sluit" onclick="sluitVB()">✕</button>
+    </div>
+    <div class="vb-form">
+      <select class="vb-sel" id="vbVan"></select>
+      <select class="vb-sel" id="vbNaar"></select>
+      <input class="ep-inp" id="vbLabel" placeholder="Label / beschrijving relatie" />
+      <button class="vb-add-btn" onclick="voegEigenVBToe()">+ Relatie toevoegen</button>
+    </div>
+    <div class="vb-lijst" id="vbLijst"></div>
+  </div>
+
+  <!-- EDIT OVERLAY (bovenop kaartje) -->
+  <div id="editOverlay">
+    <div class="eo-titel">✏️ Pin bewerken</div>
+    <input class="eo-inp" id="eoNaam" placeholder="Naam" />
+    <input class="eo-inp" id="eoBeschr" placeholder="Beschrijving" />
+    <input class="eo-inp" id="eoTags" placeholder="Tags (komma-gescheiden)" />
+    <div class="eo-btns">
+      <button class="eo-save" onclick="slaEditOp()">Opslaan</button>
+      <button class="eo-cancel" onclick="sluitEdit()">Annuleren</button>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ================================================================
+// BOULDER-PLANEET
+// Straal R zo gekozen dat omtrek = 2πR ≈ 4000 km
+// R = 4000/(2π) ≈ 636 km  →  genormaliseerd: R = 1.0 (eenheid)
+// 1 Three.js eenheid = 636 km
+//
+// Projectie: WGS84 lat/lon → sferisch, gecentreerd op NL centroid
+// NL centroid ≈ 52.20°N, 5.28°O
+// NL breedte N-Z ≈ 2.8° lat ≈ 312 km  → 28° booglengte op planeet
+// NL breedte W-O ≈ 3.8° lon ≈ 260 km  → 23° booglengte op planeet
+// Schaalfactor: we stretchen NL zodanig dat het ~140° booglengte beslaat
+// (dus "continentaal groot" op onze mini-planeet)
+// ================================================================
+
+const R = 1.0;
+
+// NL centroid en schaalfactor
+// We mappen NL lat-range [50.75, 53.55] → [-70°, +70°] op de bol (polair)
+// en NL lon-range [3.36, 7.09]   → [-70°, +70°] op de bol (equatoriaal)
+const LAT_MIN = 50.75, LAT_MAX = 53.55;
+const LON_MIN = 3.36,  LON_MAX = 7.09;
+const LAT_CEN = (LAT_MIN + LAT_MAX) / 2; // 52.15
+const LON_CEN = (LON_MIN + LON_MAX) / 2; // 5.225
+
+// Hoek die het volledige NL-bereik beslaat op de bol (graden)
+const BOL_SPAN = 130; // zodat NL het grootste deel van de voorkant vult
+
+function latLon2Bol(lat, lon) {
+  // Normaliseer binnen NL bereik → [-1, +1]
+  const nx = (lon - LON_CEN) / ((LON_MAX - LON_MIN) / 2);
+  const ny = (lat - LAT_CEN) / ((LAT_MAX - LAT_MIN) / 2);
+  // Naar hoeken op de bol (in graden)
+  const thetaX = nx * (BOL_SPAN / 2); // horizontaal (oost-west)
+  const thetaY = ny * (BOL_SPAN / 2); // verticaal (noord-zuid)
+  // Sferische coördinaten: begin aan de voorkant (z+), roteer dan
+  // pitch (thetaY om X-as) en yaw (thetaX om Y-as)
+  const pyRad = thetaY * Math.PI / 180;
+  const pxRad = thetaX * Math.PI / 180;
+  const x = R * Math.sin(pxRad) * Math.cos(pyRad);
+  const y = R * Math.sin(pyRad);
+  const z = R * Math.cos(pxRad) * Math.cos(pyRad);
+  return new THREE.Vector3(x, y, z);
+}
+
+// ================================================================
+// NEDERLAND GEODATA — hoge resolutie kustlijn (180+ punten)
+// Bron: vereenvoudigd van OpenStreetMap/GADM NL kustlijn
+// ================================================================
+const NL_KUST = [
+  // Zeeland — ZW punt
+  [51.369,3.364],[51.382,3.480],[51.408,3.576],[51.443,3.604],
+  [51.497,3.651],[51.544,3.712],[51.581,3.776],[51.624,3.839],
+  [51.660,3.918],[51.696,4.010],[51.730,4.068],[51.762,4.124],
+  [51.798,4.182],[51.831,4.246],[51.868,4.302],[51.897,4.398],
+  [51.912,4.480],[51.924,4.534],
+  // Hoek van Holland / Maasvlakte
+  [51.974,4.118],[51.994,4.058],[52.002,4.010],[52.014,3.994],
+  // NZ kust Noord-Holland
+  [52.058,4.028],[52.118,4.062],[52.178,4.086],[52.228,4.118],
+  [52.278,4.158],[52.318,4.198],[52.358,4.258],[52.398,4.338],
+  [52.438,4.418],[52.478,4.488],[52.518,4.536],[52.558,4.552],
+  [52.598,4.568],[52.638,4.610],[52.678,4.648],[52.718,4.680],
+  [52.758,4.710],[52.798,4.748],[52.838,4.768],[52.878,4.782],
+  // Den Helder
+  [52.918,4.768],[52.958,4.752],[52.998,4.748],[53.008,4.768],
+  // Waddenzee / Friesland kust
+  [52.978,4.920],[52.948,5.020],[52.918,5.100],[52.888,5.180],
+  [52.928,5.220],[52.978,5.240],[53.038,5.258],[53.098,5.278],
+  [53.158,5.308],[53.198,5.358],[53.238,5.408],[53.278,5.468],
+  [53.318,5.540],[53.358,5.618],[53.398,5.698],[53.428,5.778],
+  [53.458,5.858],[53.498,5.958],[53.528,6.058],[53.558,6.148],
+  [53.578,6.238],[53.598,6.328],[53.608,6.418],[53.612,6.508],
+  [53.608,6.598],[53.598,6.688],[53.578,6.758],[53.548,6.828],
+  [53.518,6.888],[53.488,6.958],[53.458,7.018],[53.418,7.048],
+  // Groningen oost
+  [53.368,7.058],[53.318,7.054],[53.268,7.042],[53.218,7.020],
+  [53.168,6.988],[53.118,6.958],[53.068,6.918],[53.018,6.878],
+  [52.968,6.848],[52.918,6.820],[52.868,6.800],[52.818,6.782],
+  // Drenthe / Overijssel oost (landsgrens)
+  [52.768,6.770],[52.718,6.758],[52.668,6.768],[52.618,6.788],
+  [52.568,6.808],[52.518,6.838],[52.468,6.878],[52.418,6.918],
+  [52.368,6.938],[52.318,6.948],[52.268,6.938],[52.218,6.928],
+  // Gelderland oost
+  [52.168,6.908],[52.118,6.888],[52.068,6.868],[52.018,6.848],
+  [51.968,6.828],[51.918,6.808],[51.868,6.788],[51.818,6.768],
+  [51.768,6.748],[51.718,6.718],[51.668,6.688],[51.618,6.648],
+  [51.568,6.598],[51.518,6.548],[51.468,6.498],[51.418,6.448],
+  // Limburg oost
+  [51.368,6.228],[51.338,6.088],[51.288,5.988],[51.238,5.908],
+  [51.188,5.858],[51.138,5.848],[51.098,5.868],[51.068,5.928],
+  [51.048,5.998],[51.028,6.068],[50.998,6.118],[50.968,6.168],
+  [50.938,6.198],[50.918,6.208],[50.898,6.178],[50.878,6.108],
+  [50.858,6.028],[50.878,5.968],[50.918,5.918],[50.958,5.878],
+  [50.998,5.848],[51.038,5.828],[51.078,5.828],
+  // Maas / Brabant / Zeeland terug
+  [51.118,5.878],[51.158,5.918],[51.198,5.948],[51.238,5.958],
+  [51.278,5.948],[51.308,5.908],[51.338,5.858],[51.358,5.798],
+  [51.368,5.718],[51.368,5.628],[51.358,5.528],[51.338,5.428],
+  [51.308,5.318],[51.288,5.208],[51.268,5.108],[51.258,4.988],
+  [51.258,4.878],[51.268,4.768],[51.278,4.658],[51.288,4.548],
+  [51.308,4.448],[51.328,4.358],[51.338,4.268],[51.348,4.158],
+  [51.358,4.058],[51.368,3.958],[51.368,3.858],[51.368,3.748],
+  [51.368,3.648],[51.368,3.548],[51.368,3.448],[51.369,3.364]
+];
+
+// Rivieren (Rijn, Waal, Maas, IJssel, Schelde)
+const RIVIEREN = [
+  // Waal (Rijn tak)
+  [[51.860,6.158],[51.868,5.978],[51.878,5.798],[51.888,5.618],
+   [51.898,5.438],[51.908,5.258],[51.918,5.078],[51.928,4.898],
+   [51.938,4.728],[51.948,4.558],[51.958,4.398]],
+  // IJssel
+  [[51.992,6.058],[52.088,5.978],[52.178,5.918],[52.268,5.868],
+   [52.358,5.838],[52.448,5.818],[52.538,5.808],[52.628,5.808],
+   [52.718,5.808],[52.808,5.818],[52.898,5.828]],
+  // Maas
+  [[51.748,5.868],[51.798,5.688],[51.838,5.508],[51.868,5.328],
+   [51.888,5.148],[51.898,4.968],[51.908,4.798],[51.908,4.628]],
+  // Neder-Rijn
+  [[51.958,5.958],[51.968,5.778],[51.978,5.598],[51.978,5.428],
+   [51.978,5.248],[51.968,5.068],[51.958,4.898]],
+  // Amsterdam-Rijnkanaal
+  [[52.348,5.048],[52.268,5.028],[52.188,5.018],[52.118,5.008],
+   [52.028,5.018]],
+];
+
+// Provinciegrenzen (vereenvoudigd)
+const PROV = [
+  // Groningen/Friesland
+  [[53.198,6.558],[53.168,6.448],[53.138,6.338],[53.118,6.228],[53.098,6.128]],
+  // Friesland/Drenthe
+  [[53.038,6.028],[52.988,6.088],[52.958,6.148],[52.918,6.178]],
+  // Friesland/Overijssel
+  [[52.748,5.888],[52.808,5.938],[52.858,5.988]],
+  // Noord-Holland / Utrecht / ZH
+  [[52.398,4.868],[52.338,4.888],[52.278,4.898],[52.198,4.898],
+   [52.128,4.918],[52.068,4.948],[51.998,4.978]],
+  // Utrecht / Gelderland
+  [[52.098,5.068],[52.118,5.248],[52.138,5.428],[52.148,5.608]],
+  // Noord-Brabant / ZH / Zeeland
+  [[51.598,4.028],[51.618,4.188],[51.638,4.348],[51.658,4.518],
+   [51.658,4.688],[51.648,4.858]],
+  // Noord-Brabant / Gelderland
+  [[51.758,4.988],[51.808,5.148],[51.848,5.318],[51.868,5.488]],
+  // Limburg scheiding
+  [[51.448,5.878],[51.498,5.918],[51.548,5.948],[51.578,5.968]],
+];
+
+// Grote steden als referentiepunten
+const STEDEN = [
+  {naam:'Amsterdam', lat:52.370, lon:4.895},
+  {naam:'Rotterdam', lat:51.924, lon:4.482},
+  {naam:'Den Haag',  lat:52.073, lon:4.302},
+  {naam:'Utrecht',   lat:52.092, lon:5.104},
+  {naam:'Groningen', lat:53.219, lon:6.567},
+  {naam:'Eindhoven', lat:51.434, lon:5.483},
+  {naam:'Maastricht',lat:50.851, lon:5.691},
+  {naam:'Nijmegen',  lat:51.842, lon:5.853},
+  {naam:'Zwolle',    lat:52.519, lon:6.084},
+  {naam:'Leiden',    lat:52.160, lon:4.497},
+  {naam:'Haarlem',   lat:52.388, lon:4.637},
+  {naam:'Sneek',     lat:53.033, lon:5.660},
+  {naam:'Heeze',     lat:51.383, lon:5.578},
+  {naam:'Heemstede', lat:52.352, lon:4.618},
+  {naam:'Houten',    lat:52.027, lon:5.172},
+];
+
+// ================================================================
+// LOCATIES
+// ================================================================
+const LOC = [
+  {id:'monk',naam:'Monk Bouldergym',stad:'Eindhoven (NB)',cat:'binnen',lat:51.443,lon:5.480,
+   beschr:'Grote boulderhal in Eindhoven met 1800m² klimmuren. Regelmatig competities en clinics.',
+   tags:['boulder','1800m²','cafe','beginners','gevorderden']},
+  {id:'sterk',naam:'Sterk Boulderen',stad:'Amsterdam (NH)',cat:'binnen',lat:52.394,lon:4.860,
+   beschr:'Populaire boulderhal in Amsterdam-West. Drie verdiepingen boulder, moonboard en trainingsruimte.',
+   tags:['boulder','moonboard','training','Amsterdam']},
+  {id:'kalymnos',naam:'El Kalymnos',stad:'Utrecht (UT)',cat:'binnen',lat:52.079,lon:5.137,
+   beschr:'Boulderhal en toprope in hartje Utrecht. Ruim aanbod lessen voor alle niveaus.',
+   tags:['boulder','toprope','lessen','centrum']},
+  {id:'bever',naam:'Bever Boulders',stad:'Den Haag (ZH)',cat:'binnen',lat:52.082,lon:4.328,
+   beschr:'Gezellige boulderhal in Den Haag met wisselende routebouw en een sterk community-gevoel.',
+   tags:['boulder','routebouw','community','Den Haag']},
+  {id:'hall',naam:'Klimmuur Den Haag',stad:'Den Haag (ZH)',cat:'toprope',lat:52.069,lon:4.289,
+   beschr:'Grote klimhal met toprope, voorklim en bouldergedeelte. 17 meter hoge wanden.',
+   tags:['toprope','voorklim','17m','lessen']},
+  {id:'noord',naam:'Boulderhal Noordkant',stad:'Groningen (GR)',cat:'binnen',lat:53.222,lon:6.584,
+   beschr:'De boulderhal van het Noorden. Moderne faciliteiten, routebouw door nationale setters.',
+   tags:['boulder','setters','Groningen','community']},
+  {id:'gravi',naam:'Gravitation Climbing',stad:'Nijmegen (GE)',cat:'binnen',lat:51.849,lon:5.868,
+   beschr:'Grote klim- en boulderhal in Nijmegen met 2000m² klimmuren en uitgebreid lesaanbod.',
+   tags:['boulder','voorklim','2000m²','lessen','cafe']},
+  {id:'dens',naam:'Den S Klimcentrum',stad:'Den Bosch (NB)',cat:'toprope',lat:51.690,lon:5.306,
+   beschr:'Klimcentrum met toprope, voorklim en boulder. Ideaal voor families en jeugdklimmers.',
+   tags:['toprope','voorklim','boulder','families']},
+  {id:'blok',naam:'Blokland Boulders',stad:'Rotterdam (ZH)',cat:'binnen',lat:51.922,lon:4.477,
+   beschr:'Boulderhal in Rotterdam met wekelijks wisselende routes en een actieve competitiescene.',
+   tags:['boulder','competitie','Rotterdam','wisselroutes']},
+  {id:'nkbv',naam:'NKBV Competitieroute',stad:'Landelijk',cat:'competitie',lat:52.155,lon:5.388,
+   beschr:'Nederlandse Klim- en Bergsportvereniging. Organiseert de nationale bouldercompetitie en lead-competitie.',
+   tags:['competitie','nationaal','NKBV','lead','boulder']},
+  {id:'fabriekh',naam:'Boulderhal de Fabriek Haarlem',stad:'Haarlem (NH)',cat:'binnen',lat:52.381,lon:4.646,
+   beschr:'Boulderhal in Haarlem met ruim aanbod voor beginners en gevorderden. Gezellige sfeer en wisselende routebouw.',
+   tags:['boulder','Haarlem','beginners','gevorderden'],
+   url:'https://www.boulderhaldefabriek.nl/'},
+  {id:'fabriekhd',naam:'Boulderhal de Fabriek Hoofddorp',stad:'Hoofddorp (NH)',cat:'binnen',lat:52.303,lon:4.694,
+   beschr:'Tweede vestiging van Boulderhal de Fabriek in Hoofddorp. Moderne boulderhal in de Haarlemmermeer.',
+   tags:['boulder','Hoofddorp','Haarlemmermeer'],
+   url:'https://www.boulderhaldefabriek.nl/'},
+
+  // ── EXTRA BOULDERHALLEN ──────────────────────────────────
+  {id:'monkams',naam:'Monk Bouldergym Amsterdam',stad:'Amsterdam (NH)',cat:'binnen',lat:52.367,lon:4.901,
+   beschr:'Monk-vestiging in Amsterdam met professionele routebouw en trainingsarea.',
+   tags:['boulder','Monk','Amsterdam','training'],url:'https://www.monkbouldergym.nl/'},
+  {id:'monkrdam',naam:'Monk Bouldergym Rotterdam',stad:'Rotterdam (ZH)',cat:'binnen',lat:51.916,lon:4.462,
+   beschr:'Monk Rotterdam, grote boulderhal in de havenstad met wisselende setters.',
+   tags:['boulder','Monk','Rotterdam'],url:'https://www.monkbouldergym.nl/'},
+  {id:'monkdhg',naam:'Monk Bouldergym Den Haag',stad:'Den Haag (ZH)',cat:'binnen',lat:52.068,lon:4.296,
+   beschr:'Monk Den Haag. Populaire boulderhal met breed publiek en goede bereikbaarheid.',
+   tags:['boulder','Monk','Den Haag'],url:'https://www.monkbouldergym.nl/'},
+  {id:'monkutr',naam:'Monk Bouldergym Utrecht',stad:'Utrecht (UT)',cat:'binnen',lat:52.088,lon:5.118,
+   beschr:'Monk-vestiging in Utrecht met modern interieur en breed niveauaanbod.',
+   tags:['boulder','Monk','Utrecht'],url:'https://www.monkbouldergym.nl/'},
+  {id:'neolede',naam:'Neoliet Ede',stad:'Ede (GE)',cat:'binnen',lat:52.040,lon:5.670,
+   beschr:'Neoliet klimhal in Ede met boulder en lead. Uitgebreid cursusaanbod en kinderfeestjes.',
+   tags:['boulder','lead','Neoliet','cursussen'],url:'https://www.neoliet.nl/'},
+  {id:'neolutr',naam:'Neoliet Utrecht',stad:'Utrecht (UT)',cat:'binnen',lat:52.085,lon:5.102,
+   beschr:'Neoliet Utrecht, klimhal met groot bouldergedeelte en voorklimmuren.',
+   tags:['boulder','voorklim','Neoliet','Utrecht'],url:'https://www.neoliet.nl/'},
+  {id:'neollei',naam:'Neoliet Leiden',stad:'Leiden (ZH)',cat:'binnen',lat:52.155,lon:4.485,
+   beschr:'Neoliet Leiden, combinatie van boulderen en voorklimmen in een moderne hal.',
+   tags:['boulder','voorklim','Neoliet','Leiden'],url:'https://www.neoliet.nl/'},
+  {id:'neolrdam',naam:'Neoliet Rotterdam',stad:'Rotterdam (ZH)',cat:'binnen',lat:51.915,lon:4.465,
+   beschr:'Neoliet Rotterdam, grote klimhal met toprope, voorklim en boulder.',
+   tags:['boulder','toprope','voorklim','Neoliet'],url:'https://www.neoliet.nl/'},
+  {id:'elcap',naam:'El Capitan Tilburg',stad:'Tilburg (NB)',cat:'binnen',lat:51.560,lon:5.080,
+   beschr:'El Capitan Tilburg, klim- en bouldercentrum met 2200m² klimmuren en uitgebreid jeugdprogramma.',
+   tags:['boulder','lead','2200m²','jeugd','Tilburg'],url:'https://www.elcapitan.nl/'},
+  {id:'klimams',naam:'Klimmuur Amsterdam',stad:'Amsterdam (NH)',cat:'toprope',lat:52.348,lon:4.911,
+   beschr:'Klimmuur Amsterdam, grote klimhal met toprope, lead en boulderzone. Een van de oudste hallen van NL.',
+   tags:['toprope','voorklim','boulder','Amsterdam'],url:'https://www.klimmuur.nl/'},
+  {id:'bjoeksgr',naam:'Bjoeks Groningen',stad:'Groningen (GR)',cat:'binnen',lat:53.215,lon:6.565,
+   beschr:'Klim- en bouldercentrum Bjoeks in Groningen. Combinatie van lead, toprope en boulderen.',
+   tags:['boulder','lead','toprope','Groningen'],url:'https://www.bjoeks.nl/'},
+  {id:'bjoekslw',naam:'Bjoeks Leeuwarden',stad:'Leeuwarden (FR)',cat:'binnen',lat:53.200,lon:5.800,
+   beschr:'Bjoeks vestiging in Leeuwarden. Boulderen en klimmen in Friesland.',
+   tags:['boulder','klimmen','Friesland'],url:'https://www.bjoeks.nl/'},
+  {id:'bjoekszw',naam:'Bjoeks Zwolle',stad:'Zwolle (OV)',cat:'binnen',lat:52.512,lon:6.095,
+   beschr:'Bjoeks Zwolle, klim- en boulderhal in Overijssel.',
+   tags:['boulder','klimmen','Zwolle'],url:'https://www.bjoeks.nl/'},
+  {id:'centralarnh',naam:'Central Klimmuur Arnhem',stad:'Arnhem (GE)',cat:'toprope',lat:51.985,lon:5.900,
+   beschr:'Klimhal in Arnhem met toprope, voorklim en bouldergedeelte.',
+   tags:['toprope','voorklim','boulder','Arnhem']},
+  {id:'klimsit',naam:'Klimmuur Sittard',stad:'Sittard (LI)',cat:'toprope',lat:51.000,lon:5.870,
+   beschr:'Klimhal in Sittard-Geleen met lead, toprope en boulderarea. Enige grote hal in Zuid-Limburg.',
+   tags:['toprope','lead','boulder','Limburg']},
+  {id:'bouldmaas',naam:'Boulder Maas Maastricht',stad:'Maastricht (LI)',cat:'binnen',lat:50.855,lon:5.695,
+   beschr:'Boulderhal in Maastricht. Compact maar met gevarieerde routebouw.',
+   tags:['boulder','Maastricht','Limburg']},
+  {id:'sevsum',naam:'Seven Summits Apeldoorn',stad:'Apeldoorn (GE)',cat:'binnen',lat:52.210,lon:5.960,
+   beschr:'Klim- en bouldercentrum in Apeldoorn met lead, toprope en boulderarea.',
+   tags:['boulder','lead','toprope','Apeldoorn']},
+  {id:'toprock',naam:'TopRock Climbing Assen',stad:'Assen (DR)',cat:'binnen',lat:52.990,lon:6.560,
+   beschr:'Klim- en boulderhal in Assen. De voornaamste klimlocatie in Drenthe.',
+   tags:['boulder','klimmen','Drenthe','Assen']},
+  {id:'klimalmere',naam:'Klimmuur Almere',stad:'Almere (FL)',cat:'toprope',lat:52.370,lon:5.220,
+   beschr:'Klimhal in Almere met toprope en bouldergedeelte. Enige klimhal in Flevoland.',
+   tags:['toprope','boulder','Almere','Flevoland']},
+  {id:'bouldbreda',naam:'Boulderhal Breda',stad:'Breda (NB)',cat:'binnen',lat:51.590,lon:4.770,
+   beschr:'Boulderhal in Breda met wisselende routebouw en actieve lokale community.',
+   tags:['boulder','Breda','Noord-Brabant']},
+  {id:'kraftwerk',naam:'Kraftwerk Boulders',stad:'Amsterdam (NH)',cat:'binnen',lat:52.390,lon:4.900,
+   beschr:'Boulderhal in Amsterdam met industriële sfeer en uitdagende routes.',
+   tags:['boulder','Amsterdam','training']},
+  {id:'mountainn',naam:'Mountain Network Den Haag',stad:'Den Haag (ZH)',cat:'toprope',lat:52.075,lon:4.325,
+   beschr:'Klimcentrum Den Haag met toprope, voorklim en bouldergedeelte. Breed cursusaanbod.',
+   tags:['toprope','voorklim','boulder','cursussen','Den Haag']},
+  {id:'cliffs',naam:'The Cliffs Dordrecht',stad:'Dordrecht (ZH)',cat:'binnen',lat:51.810,lon:4.670,
+   beschr:'Boulder- en klimhal in Dordrecht. Populair in de Drechtsteden.',
+   tags:['boulder','klimmen','Dordrecht']},
+  {id:'halloffame',naam:'Hall of Fame Tilburg',stad:'Tilburg (NB)',cat:'binnen',lat:51.555,lon:5.085,
+   beschr:'Boulderhal in Tilburg naast El Capitan. Focus op boulderen en training.',
+   tags:['boulder','training','Tilburg']},
+
+  // ── WINKELS KLIMMATERIAAL ────────────────────────────────
+  {id:'beverams',naam:'Bever Amsterdam',stad:'Amsterdam (NH)',cat:'winkel',lat:52.365,lon:4.885,
+   beschr:'Bever outdoor-winkel Amsterdam met uitgebreid assortiment klimschoenen, chalk, crashpads en klimhardware.',
+   tags:['winkel','klimschoenen','chalk','crashpad','harnas'],url:'https://www.bfriendsofconcepts.nl/'},
+  {id:'beverutr',naam:'Bever Utrecht',stad:'Utrecht (UT)',cat:'winkel',lat:52.090,lon:5.115,
+   beschr:'Bever Utrecht, grote outdoor winkel met afdeling klimsport en boulderattributen.',
+   tags:['winkel','klimschoenen','chalk','outdoor'],url:'https://www.bfriendsofconcepts.nl/'},
+  {id:'beverrdam',naam:'Bever Rotterdam',stad:'Rotterdam (ZH)',cat:'winkel',lat:51.920,lon:4.478,
+   beschr:'Bever Rotterdam met klimsportafdeling. Klimschoenen, touw, magnesiumballen en crashpads.',
+   tags:['winkel','klimschoenen','touw','magnesium'],url:'https://www.bfriendsofconcepts.nl/'},
+  {id:'beverdhg',naam:'Bever Den Haag',stad:'Den Haag (ZH)',cat:'winkel',lat:52.075,lon:4.310,
+   beschr:'Bever Den Haag, outdoor winkel met klimsportafdeling.',
+   tags:['winkel','klimschoenen','outdoor','Den Haag'],url:'https://www.bfriendsofconcepts.nl/'},
+  {id:'beverein',naam:'Bever Eindhoven',stad:'Eindhoven (NB)',cat:'winkel',lat:51.438,lon:5.475,
+   beschr:'Bever Eindhoven met outdoor- en klimsportafdeling in het stadscentrum.',
+   tags:['winkel','klimschoenen','outdoor','Eindhoven'],url:'https://www.bfriendsofconcepts.nl/'},
+  {id:'decams',naam:'Decathlon Amsterdam',stad:'Amsterdam (NH)',cat:'winkel',lat:52.312,lon:4.867,
+   beschr:'Decathlon Amsterdam met budgetvriendelijke klimschoenen (Simond), chalk en harnas. Ideaal voor beginners.',
+   tags:['winkel','budget','Simond','klimschoenen','beginners'],url:'https://www.decathlon.nl/'},
+  {id:'decutr',naam:'Decathlon Utrecht',stad:'Utrecht (UT)',cat:'winkel',lat:52.068,lon:5.105,
+   beschr:'Decathlon Utrecht, uitgebreide klimafdeling met Simond-producten.',
+   tags:['winkel','budget','Simond','klimschoenen'],url:'https://www.decathlon.nl/'},
+  {id:'decredam',naam:'Decathlon Rotterdam',stad:'Rotterdam (ZH)',cat:'winkel',lat:51.875,lon:4.485,
+   beschr:'Decathlon Rotterdam-Alexandrium met klimsportafdeling.',
+   tags:['winkel','budget','klimschoenen','Rotterdam'],url:'https://www.decathlon.nl/'},
+  {id:'decein',naam:'Decathlon Eindhoven',stad:'Eindhoven (NB)',cat:'winkel',lat:51.410,lon:5.460,
+   beschr:'Decathlon Eindhoven met klimschoenen, chalk en trainingsattributen.',
+   tags:['winkel','budget','klimschoenen','Eindhoven'],url:'https://www.decathlon.nl/'},
+  {id:'klimmaterialen',naam:'Klimmaterialen.nl',stad:'Online (NL)',cat:'winkel',lat:52.200,lon:5.250,
+   beschr:'Gespecialiseerde Nederlandse webshop voor klimmateriaal. Breed assortiment klimschoenen, touw, karabijners en boulderattributen.',
+   tags:['webshop','specialist','klimschoenen','touw','karabijners'],url:'https://www.klimmaterialen.nl/'},
+  {id:'bergfreunde',naam:'Bergfreunde.nl',stad:'Online (NL/DE)',cat:'winkel',lat:52.180,lon:5.280,
+   beschr:'Nederlandse versie van Bergfreunde. Grote selectie premium klimschoenen en boulderuitrusting.',
+   tags:['webshop','premium','klimschoenen','internationaal'],url:'https://www.bergfreunde.nl/'},
+  {id:'decgron',naam:'Decathlon Groningen',stad:'Groningen (GR)',cat:'winkel',lat:53.190,lon:6.585,
+   beschr:'Decathlon Groningen met klimsportafdeling. Betaalbare instapschoenen en chalk.',
+   tags:['winkel','budget','klimschoenen','Groningen'],url:'https://www.decathlon.nl/'},
+
+  // ── CURSUSSEN & WORKSHOPS ────────────────────────────────
+  {id:'cursmonk',naam:'Monk Clinics & Workshops',stad:'Landelijk (5 vestigingen)',cat:'cursus',lat:52.000,lon:4.900,
+   beschr:'Monk Bouldergym biedt regelmatig techniek-clinics, beginnerscursussen en gevorderdenlessen aan op al hun vestigingen.',
+   tags:['cursus','clinic','techniek','beginners','gevorderden'],url:'https://www.monkbouldergym.nl/'},
+  {id:'cursneol',naam:'Neoliet Cursusprogramma',stad:'Landelijk (4 vestigingen)',cat:'cursus',lat:52.050,lon:5.200,
+   beschr:'Neoliet biedt gestructureerde klim- en bouldercursussen: van introductie tot prestatiegerichte training. Ook kinderfeestjes.',
+   tags:['cursus','introductie','training','jeugd','kinderfeestjes'],url:'https://www.neoliet.nl/'},
+  {id:'cursbjoeks',naam:'Bjoeks Cursussen',stad:'Groningen / Leeuwarden / Zwolle',cat:'cursus',lat:53.100,lon:6.200,
+   beschr:'Bjoeks biedt boulder- en klimcursussen aan in Noord- en Oost-Nederland. Van beginners tot gevorderden.',
+   tags:['cursus','beginners','gevorderden','Noord-Nederland'],url:'https://www.bjoeks.nl/'},
+  {id:'curselcap',naam:'El Capitan Cursussen',stad:'Tilburg (NB)',cat:'cursus',lat:51.558,lon:5.078,
+   beschr:'El Capitan Tilburg organiseert boulderclinics, jeugdtrainingen en seizoensgebonden workshops.',
+   tags:['cursus','clinic','jeugd','workshop','Tilburg'],url:'https://www.elcapitan.nl/'},
+  {id:'cursgravi',naam:'Gravitation Workshops',stad:'Nijmegen (GE)',cat:'cursus',lat:51.847,lon:5.865,
+   beschr:'Gravitation Climbing organiseert techniekworkshops, beginnersintroducties en competitietraining.',
+   tags:['cursus','workshop','techniek','competitietraining'],url:'https://www.gravitationclimbing.nl/'},
+  {id:'nkbvcursus',naam:'NKBV Opleidingen & Cursussen',stad:'Landelijk',cat:'cursus',lat:52.160,lon:5.400,
+   beschr:'De NKBV biedt gecertificeerde instructeursopleidingen, routesetterscursussen en technische trainingen aan via aangesloten clubs.',
+   tags:['cursus','opleiding','instructeur','routesetter','certificering'],url:'https://www.nkbv.nl/'},
+
+  // ── COMPETITIES ──────────────────────────────────────────
+  {id:'dbl',naam:'Dutch Bouldering League',stad:'Landelijk (wisselend)',cat:'competitie',lat:52.100,lon:5.100,
+   beschr:'Nationale bouldercompetitie met meerdere rondes door het seizoen verspreid over diverse hallen in Nederland.',
+   tags:['competitie','nationaal','boulder','league','seizoen'],url:'https://www.nkbv.nl/'},
+  {id:'nkboulder',naam:'NK Boulderen',stad:'Wisselend',cat:'competitie',lat:52.050,lon:5.050,
+   beschr:'Het jaarlijkse Nederlands Kampioenschap Boulderen. Topklimmers uit heel Nederland strijden om de titel.',
+   tags:['competitie','NK','nationaal','kampioenschap','boulder']},
+  {id:'nklead',naam:'NK Lead & Speed',stad:'Wisselend',cat:'competitie',lat:52.120,lon:5.150,
+   beschr:'Nederlands Kampioenschap Lead en Speed Klimmen. Onderdeel van de nationale competitiekalender.',
+   tags:['competitie','NK','lead','speed','nationaal']},
+  {id:'compjeugd',naam:'NKBV Jeugdcompetities',stad:'Landelijk',cat:'competitie',lat:52.080,lon:5.200,
+   beschr:'Nationale jeugdcompetities georganiseerd door de NKBV in categorieën U12, U14, U16 en U18.',
+   tags:['competitie','jeugd','U12','U14','U16','U18']},
+  {id:'monkcup',naam:'Monk Boulder Cup',stad:'Eindhoven (NB)',cat:'competitie',lat:51.441,lon:5.478,
+   beschr:'Jaarlijkse bouldercompetitie georganiseerd door Monk Bouldergym Eindhoven. Open inschrijving.',
+   tags:['competitie','lokaal','boulder','cup','Eindhoven']},
+  {id:'nijcup',naam:'Nijmegen Boulder Cup',stad:'Nijmegen (GE)',cat:'competitie',lat:51.848,lon:5.867,
+   beschr:'Regionale bouldercompetitie bij Gravitation in Nijmegen. Onderdeel NKBV-kalender.',
+   tags:['competitie','regionaal','boulder','Nijmegen']},
+  {id:'neolbattle',naam:'Neoliet Boulder Battle',stad:'Wisselend (Neoliet-hallen)',cat:'competitie',lat:52.045,lon:5.300,
+   beschr:'Seizoensgebonden bouldercompetitie bij Neoliet-vestigingen. Populair onder recreatieve en competitieve klimmers.',
+   tags:['competitie','seizoen','Neoliet','boulder','battle']},
+  {id:'studcomp',naam:'Studenten Klimcompetities',stad:'Wisselend (universiteiten)',cat:'competitie',lat:52.200,lon:5.000,
+   beschr:'Inter-universitaire klimcompetities georganiseerd door studentenklimverenigingen (NSAK). Boulder en lead.',
+   tags:['competitie','studenten','universiteit','NSAK','boulder','lead']},
+
+  // ── SCHOLEN ──────────────────────────────────────────────
+  {id:'lootams',naam:'Topsportschool Amsterdam (LOOT)',stad:'Amsterdam (NH)',cat:'school',lat:52.355,lon:4.870,
+   beschr:'LOOT-school Amsterdam waar topsportklimmers onderwijs en training combineren. Klimmen erkend als olympische sport.',
+   tags:['school','LOOT','topsport','olympisch','Amsterdam']},
+  {id:'lootrdam',naam:'Topsportschool Rotterdam (LOOT)',stad:'Rotterdam (ZH)',cat:'school',lat:51.918,lon:4.475,
+   beschr:'LOOT-school Rotterdam met faciliteiten voor jonge competitieklimmers.',
+   tags:['school','LOOT','topsport','Rotterdam']},
+  {id:'lootein',naam:'Topsportschool Eindhoven (LOOT)',stad:'Eindhoven (NB)',cat:'school',lat:51.438,lon:5.472,
+   beschr:'LOOT-school Eindhoven. Samenwerking met Monk Bouldergym voor trainingsuren.',
+   tags:['school','LOOT','topsport','Eindhoven']},
+  {id:'asac',naam:'ASAC — Studenten Alpenclub Amsterdam',stad:'Amsterdam (NH)',cat:'school',lat:52.356,lon:4.955,
+   beschr:'Amsterdamse Studenten Alpen Club. Organiseert bouldertrainingen, clinics en trips voor UvA/VU-studenten.',
+   tags:['school','studentenclub','UvA','VU','boulderen','alpinisme']},
+  {id:'tsac',naam:'TSAC — Studenten Alpenclub Tilburg',stad:'Tilburg (NB)',cat:'school',lat:51.565,lon:5.050,
+   beschr:'Tilburgse Studenten Alpen Club. Wekelijkse bouldertrainingen bij El Capitan.',
+   tags:['school','studentenclub','Tilburg','universiteit']},
+  {id:'usac',naam:'USAC — Studenten Alpenclub Utrecht',stad:'Utrecht (UT)',cat:'school',lat:52.085,lon:5.170,
+   beschr:'Utrechtse Studenten Alpen Club. Actieve bouldergroep met trainingen bij El Kalymnos en Neoliet.',
+   tags:['school','studentenclub','Utrecht','universiteit']},
+  {id:'dsac',naam:'DSAC — Studenten Alpenclub Delft',stad:'Delft (ZH)',cat:'school',lat:52.000,lon:4.370,
+   beschr:'Delftse Studenten Alpen Club. Bouldertrainingen en klimweekenden voor TU Delft studenten.',
+   tags:['school','studentenclub','Delft','TU Delft']},
+  {id:'sacgr',naam:'SAC — Studenten Alpenclub Groningen',stad:'Groningen (GR)',cat:'school',lat:53.220,lon:6.560,
+   beschr:'Groningse Studenten Alpen Club. Wekelijks boulderen bij Bjoeks en Noordkant.',
+   tags:['school','studentenclub','Groningen','RUG']},
+  {id:'sacnijm',naam:'NSAC — Studenten Alpenclub Nijmegen',stad:'Nijmegen (GE)',cat:'school',lat:51.820,lon:5.870,
+   beschr:'Nijmeegse Studenten Alpen Club. Trainingen bij Gravitation, deelname aan studentencompetities.',
+   tags:['school','studentenclub','Nijmegen','Radboud']},
+  {id:'wsvwag',naam:'WSV Wageningen — Klimmen',stad:'Wageningen (GE)',cat:'school',lat:51.970,lon:5.665,
+   beschr:'Wageningse Studenten Vereniging klimafdeling. Bouldertraining en alpinisme-excursies.',
+   tags:['school','studentenclub','Wageningen','WUR']},
+
+  // ── INSTITUTEN & ORGANISATIES ────────────────────────────
+  {id:'nkbvorg',naam:'NKBV — Klim- en Bergsportverbond',stad:'Woerden (UT)',cat:'instituut',lat:52.085,lon:4.883,
+   beschr:'Het Koninklijk Nederlands Klim- en Bergsport Verbond. Koepelorganisatie voor klimmen en boulderen. Lid van IFSC. Organiseert competities, opleidingen en certificeringen.',
+   tags:['federatie','NKBV','IFSC','nationaal','koepel'],url:'https://www.nkbv.nl/'},
+  {id:'nocnsf',naam:'NOC*NSF — Sport Climbing',stad:'Arnhem (GE)',cat:'instituut',lat:52.000,lon:5.910,
+   beschr:'Nederlands Olympisch Comité. Ondersteuning en financiering van sportklimmen als olympische discipline sinds Tokio 2020.',
+   tags:['olympisch','NOC*NSF','topsport','financiering'],url:'https://www.nocnsf.nl/'},
+  {id:'teamnl',naam:'TeamNL Klimmen',stad:'Landelijk',cat:'instituut',lat:52.060,lon:5.320,
+   beschr:'Het Nederlandse nationale klimteam dat internationaal concurreert in boulder, lead en speed bij IFSC World Cups.',
+   tags:['nationaal team','IFSC','World Cup','olympisch','topsport']},
+  {id:'jsf',naam:'Jeugdsportfonds',stad:'Landelijk',cat:'instituut',lat:52.370,lon:4.890,
+   beschr:'Het Jeugdsportfonds financiert sportlidmaatschappen voor kinderen uit gezinnen met weinig geld, inclusief klimabonnementen.',
+   tags:['jeugd','financiering','inclusie','lidmaatschap'],url:'https://www.jeugdsportfonds.nl/'},
+  {id:'akc',naam:'AKC — Amsterdamse Klim Club',stad:'Amsterdam (NH)',cat:'instituut',lat:52.375,lon:4.895,
+   beschr:'Klimvereniging Amsterdam, aangesloten bij NKBV. Organiseert trainingen, boulderavonden en buitenklimweekenden.',
+   tags:['klimvereniging','NKBV','Amsterdam','community']},
+  {id:'kvr',naam:'KVR — Klimvereniging Rotterdam',stad:'Rotterdam (ZH)',cat:'instituut',lat:51.925,lon:4.480,
+   beschr:'Klimvereniging Rotterdam, aangesloten bij NKBV. Actieve boulder- en leadgroepen.',
+   tags:['klimvereniging','NKBV','Rotterdam','community']},
+  {id:'kvnijm',naam:'Klimvereniging Nijmegen',stad:'Nijmegen (GE)',cat:'instituut',lat:51.840,lon:5.855,
+   beschr:'Klimvereniging Nijmegen, gevestigd bij Gravitation. Organiseert bouldertrainingen en regionale competities.',
+   tags:['klimvereniging','NKBV','Nijmegen','community']},
+  {id:'jcf',naam:'Johan Cruyff Foundation',stad:'Landelijk',cat:'instituut',lat:52.345,lon:4.915,
+   beschr:'De Johan Cruyff Foundation financiert sportfaciliteiten waaronder klimmuren bij Cruyff Courts in achterstandswijken.',
+   tags:['jeugd','klimmuur','community','achterstandswijken'],url:'https://www.cruyff-foundation.org/'},
+  {id:'nsak',naam:'NSAK — Ned. Studenten Alpenclub Koepel',stad:'Landelijk',cat:'instituut',lat:52.150,lon:5.380,
+   beschr:'Koepelorganisatie van alle studentenalpenclubs in Nederland. Organiseert de jaarlijkse interuniversitaire klimcompetities.',
+   tags:['studenten','koepel','competitie','universiteit']},
+];
+
+const VBN = [
+  {van:'monk',naar:'nkbv',label:'Monk host regelmatig NKBV-competitieronden in Eindhoven.'},
+  {van:'sterk',naar:'blok',label:'Sterk & Blokland: gezamenlijke setters-uitwisseling Randstad.'},
+  {van:'kalymnos',naar:'nkbv',label:'El Kalymnos is vaste locatie voor NKBV jeugdcompetities.'},
+  {van:'gravi',naar:'nkbv',label:'Gravitation organiseert jaarlijks de Nijmegen Boulder Cup (NKBV).'},
+  {van:'noord',naar:'nkbv',label:'Noordkant is het NKBV-knooppunt voor competities in Noord-Nederland.'},
+  {van:'sterk',naar:'kalymnos',label:'Sterk & El Kalymnos: gezamenlijke trainingen en clinics A\'dam-Utrecht.'},
+  {van:'bever',naar:'hall',label:'Bever & Klimmuur Den Haag: complementair boulder + toprope aanbod.'},
+  {van:'monk',naar:'gravi',label:'Monk & Gravitation: samenwerkende setters in Zuid-/Oost-Nederland.'},
+  {van:'blok',naar:'dens',label:'Blokland & Den S: regionale samenwerking Brabant-Rotterdam.'},
+
+  // ── MONK-NETWERK (keten-relaties) ────────────────────────
+  {van:'monk',naar:'monkams',label:'Monk Eindhoven & Amsterdam: setters roteren tussen vestigingen.'},
+  {van:'monkams',naar:'monkrdam',label:'Monk Amsterdam & Rotterdam: gedeeld routebouw-team Randstad.'},
+  {van:'monkrdam',naar:'monkdhg',label:'Monk Rotterdam & Den Haag: Zuid-Holland Monk-as.'},
+  {van:'monkdhg',naar:'monkutr',label:'Monk Den Haag & Utrecht: westelijke Monk-corridor.'},
+  {van:'monkutr',naar:'monk',label:'Monk Utrecht & Eindhoven: verbinding centraal-zuid.'},
+
+  // ── NEOLIET-NETWERK ──────────────────────────────────────
+  {van:'neolede',naar:'neolutr',label:'Neoliet Ede & Utrecht: gezamenlijk cursusprogramma.'},
+  {van:'neolutr',naar:'neollei',label:'Neoliet Utrecht & Leiden: gedeelde klim- en boulderinstructeurs.'},
+  {van:'neollei',naar:'neolrdam',label:'Neoliet Leiden & Rotterdam: Randstad-dekking Neoliet.'},
+
+  // ── BJOEKS-NETWERK ───────────────────────────────────────
+  {van:'bjoeksgr',naar:'bjoekslw',label:'Bjoeks Groningen & Leeuwarden: Noord-Nederland klimcircuit.'},
+  {van:'bjoekslw',naar:'bjoekszw',label:'Bjoeks Leeuwarden & Zwolle: klim-as Friesland-Overijssel.'},
+  {van:'bjoeksgr',naar:'noord',label:'Bjoeks & Noordkant: twee boulderhallen in Groningen, complementair aanbod.'},
+
+  // ── HALLEN ↔ COMPETITIES ─────────────────────────────────
+  {van:'monk',naar:'monkcup',label:'Monk organiseert de jaarlijkse Monk Boulder Cup in Eindhoven.'},
+  {van:'gravi',naar:'nijcup',label:'Gravitation is gastheer van de Nijmegen Boulder Cup.'},
+  {van:'neolede',naar:'neolbattle',label:'Neoliet organiseert de Boulder Battle op wisselende vestigingen.'},
+  {van:'dbl',naar:'nkbv',label:'De Dutch Bouldering League is een NKBV-competitie.'},
+  {van:'nkboulder',naar:'nkbv',label:'Het NK Boulderen wordt jaarlijks georganiseerd door de NKBV.'},
+  {van:'nklead',naar:'nkbv',label:'NK Lead & Speed valt onder de NKBV-competitiekalender.'},
+  {van:'compjeugd',naar:'nkbv',label:'NKBV organiseert alle nationale jeugdcompetities (U12–U18).'},
+  {van:'studcomp',naar:'nsak',label:'Studentenklimcompetities worden gecoördineerd door de NSAK.'},
+  {van:'dbl',naar:'monk',label:'Monk-vestigingen hosten regelmatig DBL-rondes.'},
+  {van:'dbl',naar:'gravi',label:'Gravitation is vaste locatie voor DBL-rondes Oost-Nederland.'},
+  {van:'dbl',naar:'neolede',label:'Neoliet-hallen hosten DBL-rondes in Midden-Nederland.'},
+
+  // ── HALLEN ↔ CURSUSSEN ───────────────────────────────────
+  {van:'monk',naar:'cursmonk',label:'Monk Eindhoven biedt clinics en cursussen aan via het Monk cursusprogramma.'},
+  {van:'neolede',naar:'cursneol',label:'Neoliet Ede is thuisbasis van het Neoliet cursusprogramma.'},
+  {van:'bjoeksgr',naar:'cursbjoeks',label:'Bjoeks Groningen host bjoeks-cursussen en workshops.'},
+  {van:'elcap',naar:'curselcap',label:'El Capitan Tilburg organiseert eigen cursussen en jeugdprogramma.'},
+  {van:'gravi',naar:'cursgravi',label:'Gravitation biedt workshops en competitietraining aan.'},
+  {van:'nkbvorg',naar:'nkbvcursus',label:'NKBV biedt instructeursopleidingen en routesetterscursussen.'},
+
+  // ── HALLEN ↔ WINKELS ─────────────────────────────────────
+  {van:'sterk',naar:'beverams',label:'Sterk-klimmers kopen materiaal bij Bever Amsterdam, vlakbij de hal.'},
+  {van:'kalymnos',naar:'beverutr',label:'El Kalymnos-klimmers verwijzen naar Bever Utrecht voor materiaal.'},
+  {van:'blok',naar:'beverrdam',label:'Blokland-klimmers vinden materiaal bij Bever Rotterdam.'},
+  {van:'bever',naar:'beverdhg',label:'Bever Boulders Den Haag stuurt beginners naar Bever-winkel voor schoenen.'},
+  {van:'monk',naar:'beverein',label:'Monk Eindhoven stuurt klimmers naar Bever Eindhoven voor materiaal.'},
+  {van:'decams',naar:'kraftwerk',label:'Decathlon Amsterdam bedient beginners die starten bij Kraftwerk.'},
+  {van:'decutr',naar:'neolutr',label:'Decathlon Utrecht levert instapschoenen voor Neoliet-beginners.'},
+  {van:'klimmaterialen',naar:'nkbvorg',label:'Klimmaterialen.nl is sponsor en leverancier binnen het NKBV-netwerk.'},
+
+  // ── SCHOLEN ↔ HALLEN ─────────────────────────────────────
+  {van:'asac',naar:'sterk',label:'ASAC traint wekelijks bij Sterk Boulderen Amsterdam.'},
+  {van:'asac',naar:'klimams',label:'ASAC gebruikt ook Klimmuur Amsterdam voor lead- en toprope-training.'},
+  {van:'tsac',naar:'elcap',label:'TSAC traint wekelijks bij El Capitan Tilburg.'},
+  {van:'usac',naar:'kalymnos',label:'USAC traint bij El Kalymnos Utrecht.'},
+  {van:'usac',naar:'neolutr',label:'USAC gebruikt ook Neoliet Utrecht voor lead-training.'},
+  {van:'dsac',naar:'bever',label:'DSAC traint bij Bever Boulders Den Haag (dichtst bij Delft).'},
+  {van:'sacgr',naar:'bjoeksgr',label:'SAC Groningen traint bij Bjoeks Groningen.'},
+  {van:'sacgr',naar:'noord',label:'SAC Groningen bouldertraining bij Noordkant.'},
+  {van:'sacnijm',naar:'gravi',label:'NSAC Nijmegen traint bij Gravitation Climbing.'},
+  {van:'wsvwag',naar:'neolede',label:'WSV Wageningen klimt bij Neoliet Ede.'},
+  {van:'lootams',naar:'klimams',label:'LOOT Amsterdam trainingsuren bij Klimmuur Amsterdam.'},
+  {van:'lootein',naar:'monk',label:'LOOT Eindhoven trainingsuren bij Monk Bouldergym.'},
+  {van:'lootrdam',naar:'blok',label:'LOOT Rotterdam trainingsuren bij Blokland Boulders.'},
+
+  // ── SCHOLEN ↔ COMPETITIES ────────────────────────────────
+  {van:'asac',naar:'studcomp',label:'ASAC-teams doen mee aan NSAK-studentencompetities.'},
+  {van:'tsac',naar:'studcomp',label:'TSAC neemt deel aan interuniversitaire klimcompetities.'},
+  {van:'usac',naar:'studcomp',label:'USAC is vast team bij NSAK-studentencompetities.'},
+  {van:'dsac',naar:'studcomp',label:'DSAC doet mee aan studentenklimcompetities.'},
+  {van:'sacgr',naar:'studcomp',label:'SAC Groningen neemt deel aan NSAK-competities.'},
+  {van:'sacnijm',naar:'studcomp',label:'NSAC Nijmegen doet mee aan studentencompetities.'},
+  {van:'lootams',naar:'compjeugd',label:'LOOT-leerlingen nemen deel aan NKBV jeugdcompetities.'},
+
+  // ── INSTITUTEN ↔ HALLEN ──────────────────────────────────
+  {van:'nkbvorg',naar:'nkbv',label:'NKBV-verbond is organisator van de nationale competitieroute.'},
+  {van:'nocnsf',naar:'teamnl',label:'NOC*NSF financiert en ondersteunt TeamNL Klimmen.'},
+  {van:'teamnl',naar:'nkbvorg',label:'TeamNL valt organisatorisch onder het NKBV.'},
+  {van:'akc',naar:'sterk',label:'AKC (Amsterdamse Klim Club) traint bij Sterk Boulderen.'},
+  {van:'akc',naar:'klimams',label:'AKC organiseert avonden bij Klimmuur Amsterdam.'},
+  {van:'kvr',naar:'blok',label:'KVR (Klimvereniging Rotterdam) traint bij Blokland.'},
+  {van:'kvnijm',naar:'gravi',label:'Klimvereniging Nijmegen is gevestigd bij Gravitation.'},
+  {van:'akc',naar:'nkbvorg',label:'AKC is aangesloten bij het NKBV.'},
+  {van:'kvr',naar:'nkbvorg',label:'KVR is aangesloten bij het NKBV.'},
+  {van:'kvnijm',naar:'nkbvorg',label:'Klimvereniging Nijmegen is NKBV-lid.'},
+  {van:'nsak',naar:'nkbvorg',label:'NSAK werkt samen met NKBV voor studentenklimmen.'},
+  {van:'jsf',naar:'monk',label:'Jeugdsportfonds financiert klimabonnementen bij o.a. Monk.'},
+  {van:'jsf',naar:'neolede',label:'Jeugdsportfonds financiert klimabonnementen bij Neoliet.'},
+  {van:'jcf',naar:'nkbvorg',label:'Johan Cruyff Foundation bouwt klimmuren met NKBV-advies.'},
+
+  // ── CURSUSSEN ↔ COMPETITIES ──────────────────────────────
+  {van:'nkbvcursus',naar:'dbl',label:'NKBV-cursisten stromen door naar deelname aan de Dutch Bouldering League.'},
+  {van:'cursgravi',naar:'nijcup',label:'Gravitation-cursisten worden voorbereid op de Nijmegen Boulder Cup.'},
+  {van:'cursmonk',naar:'monkcup',label:'Monk-cursisten worden voorbereid op deelname aan de Monk Boulder Cup.'},
+
+  // ── WINKEL ↔ COMPETITIES ─────────────────────────────────
+  {van:'beverams',naar:'dbl',label:'Bever sponsort materiaal bij Dutch Bouldering League rondes.'},
+  {van:'decams',naar:'studcomp',label:'Decathlon levert instappakketten voor studentencompetities.'},
+
+  // ── REGIONALE KRUISVERBANDEN ─────────────────────────────
+  {van:'elcap',naar:'halloffame',label:'El Capitan & Hall of Fame: twee hallen in Tilburg, complementair aanbod lead + boulder.'},
+  {van:'toprock',naar:'bjoeksgr',label:'TopRock Assen & Bjoeks Groningen: de twee pijlers van klimmen in Noord-Nederland.'},
+  {van:'bouldmaas',naar:'klimsit',label:'Boulder Maas & Klimmuur Sittard: Limburg-klimcircuit.'},
+  {van:'cliffs',naar:'blok',label:'The Cliffs Dordrecht & Blokland Rotterdam: Zuid-Holland bouldernetwerk.'},
+  {van:'sevsum',naar:'centralarnh',label:'Seven Summits Apeldoorn & Central Arnhem: Gelderland klimcircuit.'},
+  {van:'klimalmere',naar:'klimams',label:'Klimmuur Almere & Klimmuur Amsterdam: Flevoland-NH verbinding.'},
+  {van:'mountainn',naar:'hall',label:'Mountain Network & Klimmuur Den Haag: twee grote klimhallen in Den Haag.'},
+  {van:'bouldbreda',naar:'dens',label:'Boulderhal Breda & Den S: Noord-Brabant west-oost samenwerking.'},
+];
+
+const KL = {binnen:0x4a9eff,buiten:0x2ed67a,competitie:0xff4a5e,jeugd:0xf0c060,toprope:0xb06bff,winkel:0xff8c42,cursus:0x42d4a8,school:0xe86bff,instituut:0xffd25e,eigen:0xaaffcc};
+const KLC = {binnen:'#4a9eff',buiten:'#2ed67a',competitie:'#ff4a5e',jeugd:'#f0c060',toprope:'#b06bff',winkel:'#ff8c42',cursus:'#42d4a8',school:'#e86bff',instituut:'#ffd25e',eigen:'#aaffcc'};
+const CATNL = {binnen:'BOULDERHAL',buiten:'BUITENKLIMMEN',competitie:'COMPETITIE',jeugd:'JEUGD',toprope:'TOPROPE / VOORKLIM',winkel:'WINKEL',cursus:'CURSUS / WORKSHOP',school:'SCHOOL',instituut:'INSTITUUT',eigen:'EIGEN PIN'};
+
+// ================================================================
+// THREE.JS
+// ================================================================
+const canvas = document.getElementById('c');
+const wrap = document.getElementById('wrap');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0x04060d, 1);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 50);
+
+scene.add(new THREE.AmbientLight(0x2a3a60, 2.0));
+const dl = new THREE.DirectionalLight(0x88aaf0, 1.6);
+dl.position.set(2,3,4); scene.add(dl);
+const rl = new THREE.DirectionalLight(0x2ed67a, 0.25);
+rl.position.set(-3,-1,-2); scene.add(rl);
+// Sterrenhemel-achtig punt achter
+const bl = new THREE.PointLight(0x0a2050, 1.8, 8);
+bl.position.set(-2,-2,-3); scene.add(bl);
+
+const wrapper = new THREE.Group();
+scene.add(wrapper);
+
+// BOL — het lichaam van de planeet
+const bolMat = new THREE.MeshPhongMaterial({
+  color: 0x071428,
+  shininess: 18,
+  specular: 0x0a1e3a,
+  transparent: true,
+  opacity: 0.97,
+});
+const bol = new THREE.Mesh(new THREE.SphereGeometry(R, 80, 80), bolMat);
+wrapper.add(bol);
+
+// Atmosfeer glow (buitenste schil)
+const atmMat = new THREE.MeshBasicMaterial({
+  color: 0x0820508,
+  transparent: true, opacity: 0.06, side: THREE.BackSide
+});
+wrapper.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.04, 32, 32), atmMat));
+
+// Subtiel raster (wereldcoördinaten — nu heel klein door NL-schaal)
+const rGrp = new THREE.Group();
+wrapper.add(rGrp);
+(function(){
+  const m = new THREE.LineBasicMaterial({color:0x0d1a30, transparent:true, opacity:0.28});
+  const r = R+0.001;
+  for(let la=-75;la<=75;la+=15){
+    const ph=(90-la)*Math.PI/180,pts=[];
+    for(let lo=0;lo<=360;lo+=5)
+      pts.push(new THREE.Vector3(r*Math.sin(ph)*Math.cos(lo*Math.PI/180),r*Math.cos(ph),r*Math.sin(ph)*Math.sin(lo*Math.PI/180)));
+    rGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),m));
+  }
+  for(let lo=0;lo<360;lo+=15){
+    const th=lo*Math.PI/180,pts=[];
+    for(let la=-90;la<=90;la+=4){const ph=(90-la)*Math.PI/180;pts.push(new THREE.Vector3(r*Math.sin(ph)*Math.cos(th),r*Math.cos(ph),r*Math.sin(ph)*Math.sin(th)));}
+    rGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),m));
+  }
+})();
+
+// ================================================================
+// GEODATA OP BOL TEKENEN
+// ================================================================
+const nlGrp = new THREE.Group();
+wrapper.add(nlGrp);
+const RR = R + 0.005; // ietsje boven de bol
+
+// Kustlijn
+function maakLijn(punten, kleur, opac) {
+  const pts = punten.map(p => latLon2Bol(p[0], p[1]).multiplyScalar(RR/R));
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.Line(geo, new THREE.LineBasicMaterial({color:kleur, transparent:true, opacity:opac}));
+}
+
+// Kustlijn — helder blauw, hoofdlijn
+nlGrp.add(maakLijn(NL_KUST, 0x4a9eff, 0.90));
+// Gloed eronder
+nlGrp.add(maakLijn(NL_KUST, 0x4a9eff, 0.18));
+
+// Rivieren
+RIVIEREN.forEach(r => nlGrp.add(maakLijn(r, 0x2a68cc, 0.60)));
+
+// Provinciegrenzen
+PROV.forEach(p => nlGrp.add(maakLijn(p, 0x1a3060, 0.45)));
+
+// Landvulling — subtiele stippenlaag over NL (kleiner grid want NL-schaal)
+(function(){
+  const mat = new THREE.MeshBasicMaterial({color:0x0a1e40, transparent:true, opacity:0.35});
+  for(let la=50.80;la<=53.55;la+=0.12){
+    for(let lo=3.40;lo<=7.05;lo+=0.16){
+      const p = latLon2Bol(la,lo).multiplyScalar((R+0.003)/R);
+      const d = new THREE.Mesh(new THREE.SphereGeometry(0.003,4,4), mat);
+      d.position.copy(p);
+      nlGrp.add(d);
+    }
+  }
+})();
+
+// Steden — kleine witte stippen als oriëntatie
+const stedenGrp = new THREE.Group();
+wrapper.add(stedenGrp);
+STEDEN.forEach(s => {
+  const p = latLon2Bol(s.lat, s.lon).multiplyScalar((R+0.007)/R);
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.005, 6, 6),
+    new THREE.MeshBasicMaterial({color:0xaabbdd, transparent:true, opacity:0.55})
+  );
+  m.position.copy(p);
+  m.userData = {isStad:true, naam:s.naam};
+  stedenGrp.add(m);
+});
+
+// ================================================================
+// PINS (locaties)
+// ================================================================
+const pinGrp = new THREE.Group();
+wrapper.add(pinGrp);
+const pins = [];
+const actCats = new Set(['binnen','buiten','competitie','jeugd','toprope','eigen']);
+
+// ================================================================
+// EIGEN PINS — localStorage opslag
+// ================================================================
+let eigenPins = JSON.parse(localStorage.getItem('boulder_eigenPins')||'[]');
+let eigenVBN  = JSON.parse(localStorage.getItem('boulder_eigenVBN') ||'[]');
+let urlMode   = false; // false = URLs verborgen, true = URLs zichtbaar in kaartjes
+let eigenMode = false; // false = eigen data uit, true = eigen pins zichtbaar
+let editIdx   = null;  // index van pin in bewerking
+let huidigeLoc = null; // huidige open locatie in kaartje
+
+function slaEigenPinsOp(){localStorage.setItem('boulder_eigenPins',JSON.stringify(eigenPins));}
+function slaEigenVBNOp()  {localStorage.setItem('boulder_eigenVBN', JSON.stringify(eigenVBN));}
+
+// ── EXPORT / IMPORT ───────────────────────────────────────────
+function exporteerPins(){
+  if(!eigenPins.length&&!eigenVBN.length){toon('Geen eigen data om te exporteren','err');return;}
+  const data={boulder_eigenPins:eigenPins,boulder_eigenVBN:eigenVBN,exportDatum:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='boulder-eigen-pins.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toon(`${eigenPins.length} pin(s) + ${eigenVBN.length} relatie(s) geexporteerd`,'ok');
+}
+
+function importeerPins(evt){
+  const file=evt.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      const pins=data.boulder_eigenPins;
+      const vbn=data.boulder_eigenVBN;
+      if(!Array.isArray(pins)||!Array.isArray(vbn)) throw new Error('Ongeldig formaat');
+      const bestaandeIds=new Set(eigenPins.map(p=>p.id));
+      const nieuw=pins.filter(p=>!bestaandeIds.has(p.id));
+      eigenPins=[...eigenPins,...nieuw];
+      const bestaandeVBN=new Set(eigenVBN.map(v=>v.van+'|'+v.naar+'|'+v.label));
+      const nieuweVBN=vbn.filter(v=>!bestaandeVBN.has(v.van+'|'+v.naar+'|'+v.label));
+      eigenVBN=[...eigenVBN,...nieuweVBN];
+      slaEigenPinsOp();slaEigenVBNOp();
+      renderEpLijst();renderVbLijst();vernieuwAlles();
+      toon(`${nieuw.length} pin(s) + ${nieuweVBN.length} relatie(s) geimporteerd`,'ok');
+    }catch(err){
+      toon('Fout bij importeren: ongeldig bestand','err');
+    }
+    evt.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ── URL-TOGGLE ────────────────────────────────────────────────
+function togURL(){
+  urlMode=!urlMode;
+  document.getElementById('burl').classList.toggle('on',urlMode);
+  // Werk open kaartje bij als dat er is
+  if(huidigeLoc) toonURL(huidigeLoc);
+  toon(urlMode?'Website-links: AAN':'Website-links: UIT','ok');
+}
+
+function toonURL(loc){
+  const el=document.getElementById('kurl');
+  if(urlMode&&loc.url){
+    el.innerHTML='🔗 <a href="'+loc.url+'" target="_blank" rel="noopener">'+loc.url+'</a>';
+    el.style.display='block';
+  }else{
+    el.innerHTML='';el.style.display='none';
+  }
+}
+
+// ── EIGEN DATA TOGGLE ────────────────────────────────────────
+function togEigen(){
+  eigenMode=!eigenMode;
+  document.getElementById('beigen').classList.toggle('on',eigenMode);
+  vernieuwAlles();
+  toon(eigenMode?'Eigen data: AAN — eigen pins zichtbaar':'Eigen data: UIT','ok');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let _toastT;
+function toon(txt,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=txt; t.className='show '+type;
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>t.className='',2200);
+}
+
+// ── GEOCODER (Nominatim) ──────────────────────────────────────
+let geocodedLat=null, geocodedLon=null;
+async function geocodeer(){
+  const q=document.getElementById('epAdres').value.trim();
+  if(!q){toon('Vul een adres in','err');return;}
+  const st=document.getElementById('epGeoStatus');
+  st.textContent='Zoeken…';
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=nl&limit=1`,
+      {headers:{'Accept-Language':'nl'}});
+    const d=await r.json();
+    if(!d.length){st.textContent='Niet gevonden. Probeer anders.';return;}
+    geocodedLat=parseFloat(d[0].lat);
+    geocodedLon=parseFloat(d[0].lon);
+    const naam=d[0].display_name.split(',')[0];
+    st.textContent=`✓ ${naam} (${geocodedLat.toFixed(3)}, ${geocodedLon.toFixed(3)})`;
+    if(!document.getElementById('epNaam').value) document.getElementById('epNaam').value=naam;
+  }catch(e){st.textContent='Fout bij ophalen. Probeer opnieuw.';}
+}
+
+// ── EIGEN PINS PANEL ─────────────────────────────────────────
+function openEP(){
+  document.getElementById('epPanel').classList.add('open');
+  renderEpLijst();
+}
+function sluitEP(){document.getElementById('epPanel').classList.remove('open');}
+
+function renderEpLijst(){
+  const el=document.getElementById('epLijst');
+  if(!eigenPins.length){el.innerHTML='<div class="ep-leeg">Nog geen eigen pins</div>';return;}
+  el.innerHTML=eigenPins.map((p,i)=>`
+    <div class="ep-item">
+      <div class="ep-item-dot" style="background:${KLC[p.cat]||'#aaffcc'}"></div>
+      <div class="ep-item-info">
+        <div class="ep-item-naam">${p.naam}</div>
+        <div class="ep-item-meta">${p.stad||''}${p.lat?' · '+p.lat.toFixed(3)+', '+p.lon.toFixed(3):''}</div>
+      </div>
+      <div class="ep-item-acties">
+        <button class="ep-edit-btn" onclick="startEditEP(${i})" title="Bewerken">✏</button>
+        <button class="ep-del-btn" onclick="verwijderEP(${i})" title="Verwijderen">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function voegEigenPinToe(){
+  const naam=document.getElementById('epNaam').value.trim();
+  if(!naam){toon('Vul een naam in','err');return;}
+  if(geocodedLat===null){toon('Zoek eerst op adres (🔍)','err');return;}
+  const cat=document.getElementById('epCat').value;
+  const beschr=document.getElementById('epBeschr').value.trim();
+  const adres=document.getElementById('epAdres').value.trim();
+  const pin={
+    id:'eigen_'+Date.now(),
+    naam,cat,lat:geocodedLat,lon:geocodedLon,
+    stad:adres||naam,beschr:beschr||'Eigen pin',tags:['eigen'],
+    isEigen:true
+  };
+  eigenPins.push(pin);
+  slaEigenPinsOp();
+  document.getElementById('epNaam').value='';
+  document.getElementById('epAdres').value='';
+  document.getElementById('epBeschr').value='';
+  document.getElementById('epGeoStatus').textContent='';
+  geocodedLat=null;geocodedLon=null;
+  renderEpLijst();
+  vernieuwAlles();
+  toon(`📌 "${naam}" toegevoegd`,'ok');
+}
+
+function verwijderEP(i){
+  const naam=eigenPins[i].naam;
+  // Verwijder ook gekoppelde relaties
+  eigenVBN=eigenVBN.filter(v=>v.van!==eigenPins[i].id&&v.naar!==eigenPins[i].id);
+  eigenPins.splice(i,1);
+  slaEigenPinsOp();slaEigenVBNOp();
+  renderEpLijst();renderVbLijst();
+  vernieuwAlles();
+  toon(`🗑 "${naam}" verwijderd`,'ok');
+}
+
+function startEditEP(i){
+  editIdx=i;
+  const p=eigenPins[i];
+  document.getElementById('epNaam').value=p.naam;
+  document.getElementById('epAdres').value=p.stad||'';
+  document.getElementById('epBeschr').value=p.beschr||'';
+  document.getElementById('epCat').value=p.cat||'eigen';
+  geocodedLat=p.lat;geocodedLon=p.lon;
+  document.getElementById('epGeoStatus').textContent=`✓ ${p.stad} (${p.lat.toFixed(3)}, ${p.lon.toFixed(3)})`;
+  // Wijzig knop tijdelijk naar "Bijwerken"
+  const btn=document.querySelector('.ep-add-btn');
+  btn.textContent='✓ Bijwerken';
+  btn.onclick=()=>slaEPEditOp();
+}
+
+function slaEPEditOp(){
+  const naam=document.getElementById('epNaam').value.trim();
+  if(!naam||editIdx===null){return;}
+  eigenPins[editIdx]={...eigenPins[editIdx],
+    naam,cat:document.getElementById('epCat').value,
+    stad:document.getElementById('epAdres').value.trim()||naam,
+    beschr:document.getElementById('epBeschr').value.trim(),
+    lat:geocodedLat,lon:geocodedLon};
+  slaEigenPinsOp();editIdx=null;
+  document.querySelector('.ep-add-btn').textContent='+ Toevoegen';
+  document.querySelector('.ep-add-btn').onclick=()=>voegEigenPinToe();
+  document.getElementById('epNaam').value='';
+  document.getElementById('epAdres').value='';
+  document.getElementById('epBeschr').value='';
+  document.getElementById('epGeoStatus').textContent='';
+  geocodedLat=null;geocodedLon=null;
+  renderEpLijst();vernieuwAlles();
+  toon('✓ Pin bijgewerkt','ok');
+}
+
+// ── RELATIES PANEL ────────────────────────────────────────────
+function openVB(){
+  document.getElementById('vbPanel').classList.add('open');
+  vulVBSelecten();renderVbLijst();
+}
+function sluitVB(){document.getElementById('vbPanel').classList.remove('open');}
+
+function alleLocaties(){return [...LOC,...eigenPins];}
+
+function vulVBSelecten(){
+  const all=alleLocaties();
+  const opties=all.map(l=>`<option value="${l.id}">${l.naam.split('—')[0].trim().substring(0,32)}</option>`).join('');
+  document.getElementById('vbVan').innerHTML=opties;
+  document.getElementById('vbNaar').innerHTML=opties;
+}
+
+function voegEigenVBToe(){
+  const van=document.getElementById('vbVan').value;
+  const naar=document.getElementById('vbNaar').value;
+  const label=document.getElementById('vbLabel').value.trim();
+  if(!label){toon('Vul een label in','err');return;}
+  if(van===naar){toon('Van en naar mogen niet gelijk zijn','err');return;}
+  eigenVBN.push({van,naar,label,isEigen:true});
+  slaEigenVBNOp();
+  document.getElementById('vbLabel').value='';
+  renderVbLijst();vernieuwAlles();
+  toon('↔ Relatie toegevoegd','ok');
+}
+
+function verwijderVBN(i){
+  eigenVBN.splice(i,1);slaEigenVBNOp();
+  renderVbLijst();vernieuwAlles();
+  toon('Relatie verwijderd','ok');
+}
+
+function renderVbLijst(){
+  const el=document.getElementById('vbLijst');
+  if(!eigenVBN.length){el.innerHTML='<div class="vb-leeg">Nog geen eigen relaties</div>';return;}
+  const all=alleLocaties();
+  el.innerHTML=eigenVBN.map((v,i)=>{
+    const vL=all.find(l=>l.id===v.van),nL=all.find(l=>l.id===v.naar);
+    return `<div class="vb-item">
+      <div class="vb-item-info">
+        <div class="vb-item-lbl">${vL?.naam.split('—')[0].trim()||v.van} ↔ ${nL?.naam.split('—')[0].trim()||v.naar}</div>
+        <div class="vb-item-meta">${v.label}</div>
+      </div>
+      <div class="vb-item-acties">
+        <button class="vb-del-btn" onclick="verwijderVBN(${i})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── EDIT VIA KAARTJE ──────────────────────────────────────────
+function openEditViaKaart(){
+  if(!huidigeLoc||!huidigeLoc.isEigen) return;
+  const p=huidigeLoc;
+  document.getElementById('eoNaam').value=p.naam;
+  document.getElementById('eoBeschr').value=p.beschr||'';
+  document.getElementById('eoTags').value=(p.tags||[]).join(', ');
+  document.getElementById('editOverlay').classList.add('open');
+}
+function sluitEdit(){document.getElementById('editOverlay').classList.remove('open');}
+function slaEditOp(){
+  if(!huidigeLoc||!huidigeLoc.isEigen) return;
+  const idx=eigenPins.findIndex(p=>p.id===huidigeLoc.id);
+  if(idx<0) return;
+  eigenPins[idx].naam=document.getElementById('eoNaam').value.trim()||eigenPins[idx].naam;
+  eigenPins[idx].beschr=document.getElementById('eoBeschr').value.trim();
+  eigenPins[idx].tags=document.getElementById('eoTags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  slaEigenPinsOp();
+  sluitEdit();vernieuwAlles();
+  toon('✓ Opgeslagen','ok');
+  openK(eigenPins[idx]); // kaartje verversen
+}
+function verwijderViaKaart(){
+  if(!huidigeLoc||!huidigeLoc.isEigen) return;
+  const idx=eigenPins.findIndex(p=>p.id===huidigeLoc.id);
+  if(idx<0) return;
+  const naam=eigenPins[idx].naam;
+  eigenVBN=eigenVBN.filter(v=>v.van!==huidigeLoc.id&&v.naar!==huidigeLoc.id);
+  eigenPins.splice(idx,1);
+  slaEigenPinsOp();slaEigenVBNOp();
+  sluit();vernieuwAlles();renderEpLijst();renderVbLijst();
+  toon(`🗑 "${naam}" verwijderd`,'ok');
+}
+
+// ── VERNIEUW ALLES (pins + bogen opbouwen) ────────────────────
+function vernieuwAlles(){
+  // Verwijder alle huidige eigen pins en bogen
+  for(let i=pins.length-1;i>=0;i--){
+    if(pins[i].userData.loc&&pins[i].userData.loc.isEigen){
+      pinGrp.remove(pins[i]);pins.splice(i,1);
+    }
+  }
+  // Eigen ringen ook opruimen
+  for(let i=pinGrp.children.length-1;i>=0;i--){
+    const c=pinGrp.children[i];
+    if(c.userData.isRing&&c.userData.eigenPin) pinGrp.remove(c);
+  }
+  // Eigen bogen verwijderen
+  for(let i=boogGrp.children.length-1;i>=0;i--){
+    const c=boogGrp.children[i];
+    if(c.userData.isEigen) boogGrp.remove(c);
+  }
+  for(let i=ankers.length-1;i>=0;i--){
+    if(ankers[i].userData.isEigen){boogGrp.remove(ankers[i]);ankers.splice(i,1);}
+  }
+
+  if(!eigenMode) return; // Eigen data uit: geen eigen pins
+
+  // Eigen pins toevoegen
+  eigenPins.forEach(loc=>{
+    const kl=KL[loc.cat]||KL.eigen;
+    const p=latLon2Bol(loc.lat,loc.lon).multiplyScalar((R+0.025)/R);
+    const kern=new THREE.Mesh(
+      new THREE.SphereGeometry(0.007,14,14),
+      new THREE.MeshPhongMaterial({color:kl,emissive:kl,emissiveIntensity:0.45,transparent:true,opacity:0.40})
+    );
+    kern.position.copy(p);
+    kern.userData={loc,kl,baseEI:0.45,baseOpacity:0.40};
+    pinGrp.add(kern);pins.push(kern);
+    const ring=new THREE.Mesh(
+      new THREE.RingGeometry(0.008,0.012,18),
+      new THREE.MeshBasicMaterial({color:kl,transparent:true,opacity:0.15,side:THREE.DoubleSide})
+    );
+    ring.position.copy(p);ring.lookAt(p.clone().multiplyScalar(2));
+    ring.userData={isRing:true,t:Math.random()*Math.PI*2,eigenPin:true};
+    pinGrp.add(ring);
+  });
+
+  // Eigen VBN toevoegen (inclusief mix vast+eigen)
+  const all=alleLocaties();
+  eigenVBN.forEach(vb=>{
+    const vL=all.find(l=>l.id===vb.van),nL=all.find(l=>l.id===vb.naar);
+    if(!vL||!nL) return;
+    const p1=latLon2Bol(vL.lat,vL.lon).multiplyScalar((R+0.022)/R);
+    const p2=latLon2Bol(nL.lat,nL.lon).multiplyScalar((R+0.022)/R);
+    const cp1=p1.clone().add(p2).multiplyScalar(0.5).normalize().multiplyScalar(R+0.055);
+    const curve=new THREE.CubicBezierCurve3(p1,cp1,cp1.clone(),p2);
+    const lijn=new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(80)),
+      new THREE.LineBasicMaterial({color:0xaaffcc,transparent:true,opacity:0.28})
+    );
+    lijn.userData={isBoog:true,isEigen:true};boogGrp.add(lijn);
+    const a=new THREE.Mesh(
+      new THREE.SphereGeometry(0.007,8,8),
+      new THREE.MeshBasicMaterial({color:0xaaffcc,transparent:true,opacity:0.18})
+    );
+    a.position.copy(curve.getPoint(0.30));
+    a.userData={isBoogAnker:true,vb,vL,nL,isEigen:true};
+    boogGrp.add(a);ankers.push(a);
+  });
+
+  // Filter eigen pins in actCats
+  pins.forEach(m=>{if(m.userData.loc)m.visible=actCats.has(m.userData.loc.cat);});
+  herteken();
+}
+
+LOC.forEach(loc => {
+  const kl = KL[loc.cat] || 0xffffff;
+  const p = latLon2Bol(loc.lat, loc.lon).multiplyScalar((R+0.025)/R);
+
+  const kern = new THREE.Mesh(
+    new THREE.SphereGeometry(0.007, 14, 14),
+    new THREE.MeshPhongMaterial({color:kl, emissive:kl, emissiveIntensity:0.45,
+      transparent:true, opacity:0.40})
+  );
+  kern.position.copy(p);
+  kern.userData = {loc, kl, baseEI:0.45, baseOpacity:0.40};
+  pinGrp.add(kern);
+  pins.push(kern);
+
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.008, 0.012, 18),
+    new THREE.MeshBasicMaterial({color:kl, transparent:true, opacity:0.15, side:THREE.DoubleSide})
+  );
+  ring.position.copy(p);
+  ring.lookAt(p.clone().multiplyScalar(2));
+  ring.userData = {isRing:true, t:Math.random()*Math.PI*2};
+  pinGrp.add(ring);
+});
+
+// ================================================================
+// BOGEN
+// ================================================================
+const boogGrp = new THREE.Group();
+wrapper.add(boogGrp);
+const ankers = [];
+
+VBN.forEach(vb => {
+  const vL=LOC.find(l=>l.id===vb.van), nL=LOC.find(l=>l.id===vb.naar);
+  if(!vL||!nL) return;
+  const p1=latLon2Bol(vL.lat,vL.lon).multiplyScalar((R+0.022)/R);
+  const p2=latLon2Bol(nL.lat,nL.lon).multiplyScalar((R+0.022)/R);
+
+  // Controlepunten dicht bij het oppervlak — boog vloeit langs de bol
+  // ipv er ver boven uit te steken (was R+0.22, nu R+0.055)
+  const cp1 = p1.clone().add(p2).multiplyScalar(0.5).normalize().multiplyScalar(R+0.055);
+  const cp2 = cp1.clone(); // symmetrisch
+
+  // Cubic Bézier: p1 → cp1 → cp2 → p2 (geeft vloeiendere lijn langs oppervlak)
+  const curve = new THREE.CubicBezierCurve3(p1, cp1, cp2, p2);
+  const curvePts = curve.getPoints(80);
+
+  boogGrp.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(curvePts),
+    new THREE.LineBasicMaterial({color:0xf0c060, transparent:true, opacity:0.28})
+  ));
+  boogGrp.children[boogGrp.children.length-1].userData={isBoog:true};
+
+  // Ankerpunt op ~30% van de boog (dichter bij vertrekpunt, laag bij het oppervlak)
+  // — zodat het label leesbaar is zonder de boog zelf te overstijgen
+  const ankerPt = curve.getPoint(0.30);
+
+  const a = new THREE.Mesh(
+    new THREE.SphereGeometry(0.007, 8, 8),
+    new THREE.MeshBasicMaterial({color:0xf0c060, transparent:true, opacity:0.18})
+  );
+  a.position.copy(ankerPt);
+  a.userData={isBoogAnker:true,vb,vL,nL};
+  boogGrp.add(a);
+  ankers.push(a);
+});
+
+// ================================================================
+// ZOOM
+// ================================================================
+const CZ={1:3.0,2:2.0,3:1.48};
+const ZLB={1:'Landelijk',2:'Regionaal',3:'Lokaal'};
+const ZKM={1:'100 km',2:'10 km',3:'1 km'};
+// Pin-schaal continu gekoppeld aan camera-afstand — zelfde logica als labelSchaal()
+// zodat dots en labels altijd proportioneel aan de stadstippen bewegen
+function pinSchaal() {
+  const t = Math.max(0, Math.min(1, (camera.position.z - 1.2) / (3.0 - 1.2)));
+  // t=0 = dichtbij, t=1 = ver weg
+  // Bewust klein gehouden zodat dots nooit de stadsnaam-schaal overstijgen
+  // Schaal van 0.65 (ver) naar 1.05 (dichtbij) — bewust ingetogen
+  return 0.65 + (1 - t) * 0.40;
+}
+// Label zichtbaarheid wordt continu berekend via labelSchaal()
+let trap=1, doelZ=CZ[1];
+
+function setTrap(n){
+  trap=n; doelZ=CZ[n];
+  [1,2,3].forEach(i=>document.getElementById('zt'+i).classList.toggle('on',i===n));
+  document.getElementById('zlbl').textContent=ZLB[n];
+  document.getElementById('zkm').textContent='· '+ZKM[n];
+  herteken();
+}
+function updZI(z){
+  const n=[1,2,3].reduce((a,b)=>Math.abs(CZ[b]-z)<Math.abs(CZ[a]-z)?b:a,1);
+  if(n===trap) return; trap=n;
+  [1,2,3].forEach(i=>document.getElementById('zt'+i).classList.toggle('on',i===n));
+  document.getElementById('zlbl').textContent=ZLB[n];
+  document.getElementById('zkm').textContent='· '+ZKM[n];
+}
+
+// ================================================================
+// LABEL OVERLAY
+// ================================================================
+const lc=document.createElement('canvas');
+lc.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:5';
+wrap.appendChild(lc);
+const lx=lc.getContext('2d');
+
+// ================================================================
+// LABEL SCHAAL — continu herberekend op basis van camera-afstand
+// CZ[1]=3.0 (ver) → CZ[3]=1.48 (dichtbij)
+// Afstand daalt → schaal stijgt → grotere letters, dikkere borders
+// ================================================================
+function labelSchaal() {
+  // Normaliseer camera Z: 1.2 (max in) → 3.0 (ver uit) → waarde 0..1
+  const cz = camera.position.z;
+  const t = Math.max(0, Math.min(1, (cz - 1.2) / (3.0 - 1.2)));
+  // t=0 → dichtbij (trap 3), t=1 → ver weg (trap 1)
+  // Omgekeerd: schaalfactor 1 bij ver, groot bij dichtbij
+  const s = 1 - t; // 0 = ver, 1 = dichtbij
+
+  return {
+    // Lettergrootte pin-label: 9px (ver) → 16px (dichtbij)
+    // Bewust smaller plafond zodat labels niet groter worden dan de dot
+    fs:        Math.round(9  + s * 7),
+    // Lettergrootte stadstippen: 7px → 11px (referentie-schaal)
+    fsStad:    Math.round(7  + s * 4),
+    // Pill padding horizontaal
+    px:        Math.round(4  + s * 5),
+    // Lijndikte border
+    lw:        0.5 + s * 1.2,
+    // Verbindingslijn pin→label
+    lijnLw:    0.4 + s * 0.9,
+    // Offset label rechts van pin
+    offset:    Math.round(13 + s * 10),
+    // Hoeveel woorden tonen in naam (1 ver, alle woorden dichtbij)
+    woorden:   s < 0.25 ? 2 : s < 0.6 ? 3 : 99,
+    // Minimum zichtbaarheid: labels pas tonen als niet te ver
+    zichtbaar: cz < 2.75,
+    // Stadnamen pas bij regionaal/lokaal
+    stadZichtbaar: cz < 2.35,
+    // Zichtbaarheidsgradient: labels faden in bij inzoomen
+    alpha:     Math.max(0, Math.min(1, (2.75 - cz) / 0.4)),
+    alphaStad: Math.max(0, Math.min(1, (2.35 - cz) / 0.3)),
+    // Border opacity
+    borderAlpha: Math.round((0.35 + s * 0.45) * 255).toString(16).padStart(2,'0'),
+  };
+}
+
+function herteken(){
+  const w=wrap.clientWidth,h=wrap.clientHeight;
+  const dpr=window.devicePixelRatio||1;
+  lc.width=w*dpr; lc.height=h*dpr;
+  lc.style.width=w+'px'; lc.style.height=h+'px';
+  lx.setTransform(dpr,0,0,dpr,0,0); // gebruik setTransform ipv scale (reset vorige)
+  lx.clearRect(0,0,w,h);
+
+  const sc = labelSchaal();
+
+  // ── STADNAMEN ──────────────────────────────────────────────
+  if(sc.stadZichtbaar && sc.alphaStad > 0){
+    lx.font=`${sc.fsStad}px DM Mono,monospace`;
+    lx.fillStyle=`rgba(150,178,228,${(sc.alphaStad*0.6).toFixed(2)})`;
+    stedenGrp.children.forEach(s=>{
+      if(!s.userData.isStad) return;
+      const wp=new THREE.Vector3(); s.getWorldPosition(wp);
+      const cam=wp.clone().project(camera);
+      if(cam.z>1.0) return;
+      if(wp.clone().normalize().dot(camera.position.clone().sub(wp).normalize())<0.12) return;
+      const sx=(cam.x*.5+.5)*w, sy=(-cam.y*.5+.5)*h;
+      lx.fillText(s.userData.naam, sx+sc.fsStad*0.7, sy-2);
+    });
+  }
+
+  // ── PIN LABELS ─────────────────────────────────────────────
+  if(!sc.zichtbaar || sc.alpha<=0) return;
+
+  const items=[];
+  pins.forEach(mesh=>{
+    if(!actCats.has(mesh.userData.loc.cat)||!mesh.visible) return;
+    const wp=new THREE.Vector3(); mesh.getWorldPosition(wp);
+    const cam=wp.clone().project(camera);
+    if(cam.z>1.0) return;
+    if(wp.clone().normalize().dot(camera.position.clone().sub(wp).normalize())<0.10) return;
+    items.push({mesh, x:(cam.x*.5+.5)*w, y:(-cam.y*.5+.5)*h, z:cam.z});
+  });
+  items.sort((a,b)=>a.z-b.z); // dichtstbij eerst = hogere prioriteit
+
+  labelHitboxen = []; // module-level: { x1,y1,x2,y2, mesh }
+  lx.font=`${sc.fs}px DM Mono,monospace`; // CSS-px na setTransform(dpr)
+  const pillH = sc.fs + sc.px * 1.4;
+  const pillR = Math.max(2, sc.px * 0.6);
+
+  items.forEach(({mesh,x,y})=>{
+    const loc=mesh.userData.loc;
+    const kl=KLC[loc.cat];
+
+    // Naam afkappen op basis van zoomniveau
+    const delen = loc.naam.split('—')[0].split('(')[0].trim().split(' ');
+    const kort = sc.woorden >= 99 ? loc.naam : delen.slice(0, sc.woorden).join(' ');
+
+    // tw in CSS-pixels (measureText geeft na setTransform CSS-pixels terug)
+    const tw = lx.measureText(kort).width;
+    const lbx = x + sc.offset;
+    const lby = y - pillH / 2;
+    // Hitbox iets groter dan visuele pill voor makkelijker klikken
+    const hitPad = 4;
+    const vak = {x1:lbx-sc.px-hitPad, y1:lby-hitPad, x2:lbx+tw+sc.px+hitPad, y2:lby+pillH+hitPad};
+
+    // Anti-overlap: sla over als bezet
+    if(labelHitboxen.some(b=>!(vak.x2<b.x1||vak.x1>b.x2||vak.y2<b.y1||vak.y1>b.y2))) return;
+    labelHitboxen.push({...vak, mesh});
+
+    const a = sc.alpha;
+
+    // Pill achtergrond — canvas tekent in CSS-pixels dankzij setTransform(dpr)
+    // tw is al CSS-pixels, alles klopt
+    lx.fillStyle=`rgba(4,6,14,${(a*0.88).toFixed(2)})`;
+    lx.beginPath();
+    lx.roundRect(lbx-sc.px, lby, tw+sc.px*2, pillH, pillR);
+    lx.fill();
+
+    // Pill border
+    lx.strokeStyle=kl+sc.borderAlpha;
+    lx.lineWidth=sc.lw;
+    lx.stroke();
+
+    // Verbindingslijn pin → label
+    lx.strokeStyle=`rgba(${hexRgb(kl)},${(a*0.35).toFixed(2)})`;
+    lx.lineWidth=sc.lijnLw;
+    lx.beginPath();
+    lx.moveTo(x+sc.fs*0.3, y);
+    lx.lineTo(lbx-sc.px+1, y);
+    lx.stroke();
+
+    // Tekst
+    lx.fillStyle=`rgba(220,232,252,${a.toFixed(2)})`;
+    lx.fillText(kort, lbx, lby+pillH-sc.px*0.7);
+  });
+}
+
+// Helper: '#4a9eff' → '74,158,255'
+function hexRgb(hex){
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+
+// ================================================================
+// INTERACTIE
+// ================================================================
+let drag=false,px0={x:0,y:0},rotX=0,rotY=0,autoRot=true;
+let prevPinch=null,gesPin=null;
+let labelHitboxen=[]; // hitboxen van getekende labels
+
+canvas.addEventListener('mousedown',e=>{drag=true;px0={x:e.clientX,y:e.clientY};autoRot=false;updRB();});
+canvas.addEventListener('mouseup',()=>drag=false);
+canvas.addEventListener('mouseleave',()=>drag=false);
+canvas.addEventListener('mousemove',e=>{
+  if(drag){rotY+=(e.clientX-px0.x)*.005;rotX+=(e.clientY-px0.y)*.005;
+    rotX=Math.max(-1.3,Math.min(1.3,rotX));px0={x:e.clientX,y:e.clientY};}
+  chkH(e.clientX,e.clientY);
+});
+canvas.addEventListener('wheel',e=>{
+  doelZ=Math.max(1.2,Math.min(6,doelZ+e.deltaY*.006));updZI(doelZ);
+},{passive:true});
+canvas.addEventListener('click',e=>tap(e.clientX,e.clientY));
+canvas.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){drag=true;autoRot=false;updRB();px0={x:e.touches[0].clientX,y:e.touches[0].clientY};}
+  else if(e.touches.length===2) prevPinch=pd(e);
+},{passive:true});
+canvas.addEventListener('touchend',e=>{
+  drag=false;prevPinch=null;
+  if(e.changedTouches.length===1) tap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  if(e.touches.length===2&&prevPinch!==null){
+    const d=pd(e);doelZ=Math.max(1.2,Math.min(6,doelZ+(prevPinch-d)*.009));prevPinch=d;updZI(doelZ);
+  } else if(drag&&e.touches.length===1){
+    rotY+=(e.touches[0].clientX-px0.x)*.006;rotX+=(e.touches[0].clientY-px0.y)*.006;
+    rotX=Math.max(-1.3,Math.min(1.3,rotX));px0={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  }
+},{passive:true});
+function pd(e){return Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+
+const rc=new THREE.Raycaster();
+const mn=new THREE.Vector2();
+let hovPin=null;
+
+function ndc(cx,cy){const r=canvas.getBoundingClientRect();mn.set(((cx-r.left)/r.width)*2-1,(-(cy-r.top)/r.height)*2+1);}
+
+function chkH(cx,cy){
+  // Check label-hitboxen voor cursor feedback
+  const rect2=canvas.getBoundingClientRect();
+  const mx2=cx-rect2.left, my2=cy-rect2.top;
+  if(labelHitboxen.some(b=>mx2>=b.x1&&mx2<=b.x2&&my2>=b.y1&&my2<=b.y2)){
+    canvas.style.cursor='pointer'; return;
+  }
+  ndc(cx,cy);rc.setFromCamera(mn,camera);
+  const hits=rc.intersectObjects([...pins,...ankers]);
+  if(hovPin&&hovPin!==gesPin){
+    hovPin.material.emissiveIntensity=hovPin.userData.baseEI||.45;
+    hovPin.material.opacity=hovPin.userData.baseOpacity||.40;
+  }
+  // Booganker terugzetten naar standaard onzichtbaar
+  ankers.forEach(a=>{ if(a!==gesPin) a.material.opacity=0.18; });
+  hovPin=null;canvas.style.cursor='default';
+  document.getElementById('btip').classList.remove('on');
+  if(!hits.length) return;
+  const h=hits[0].object;
+  if(h.userData.loc){hovPin=h;h.material.emissiveIntensity=1.0;
+      h.material.opacity=0.85;canvas.style.cursor='pointer';}
+  else if(h.userData.isBoogAnker){
+    h.material.opacity=0.90;
+    canvas.style.cursor='pointer';
+    const bt=document.getElementById('btip');
+    const vb=h.userData.vb;
+    bt.innerHTML=`<strong>${h.userData.vL.naam.split('—')[0].trim()}</strong><br>↔ <strong>${h.userData.nL.naam.split('—')[0].trim()}</strong><br><span style="color:#9ab2cc;font-size:.65rem">${vb.label}</span>`;
+    const r=canvas.getBoundingClientRect();
+    bt.style.left=Math.min(cx+12,r.width-240)+'px';
+    bt.style.top=Math.max(cy-70,6)+'px';
+    bt.classList.add('on');
+  }
+}
+
+function tap(cx,cy){
+  // Eerst: check of de tap op een getekend label-vak valt (canvas 2D hitbox)
+  const rect=canvas.getBoundingClientRect();
+  const lx2=cx-rect.left, ly2=cy-rect.top;
+  const labelHit=labelHitboxen.find(b=>lx2>=b.x1&&lx2<=b.x2&&ly2>=b.y1&&ly2<=b.y2);
+  if(labelHit){
+    const m=labelHit.mesh;
+    if(gesPin&&gesPin!==m){gesPin.material.opacity=gesPin.userData.baseOpacity||.40;}
+    gesPin=m; m.material.opacity=1.0;
+    openK(m.userData.loc);
+    document.getElementById('hint').classList.add('hide');
+    return;
+  }
+  // Dan: raycaster voor 3D dots en boogankers
+  ndc(cx,cy);rc.setFromCamera(mn,camera);
+  const hits=rc.intersectObjects([...pins,...ankers]);
+  if(!hits.length){sluit();return;}
+  const h=hits[0].object;
+  if(h.userData.loc){
+    if(gesPin&&gesPin!==h){gesPin.material.opacity=gesPin.userData.baseOpacity||.40;}
+    gesPin=h;h.material.opacity=1.0;openK(h.userData.loc);
+  }
+  else if(h.userData.isBoogAnker) openB(h.userData.vb,h.userData.vL,h.userData.nL);
+  document.getElementById('hint').classList.add('hide');
+}
+
+// ================================================================
+// KAARTJE
+// ================================================================
+function openK(loc){
+  huidigeLoc=loc;
+  const k=KLC[loc.cat]||KLC.eigen;
+  document.getElementById('kband').style.background=k;
+  document.getElementById('kcat').style.color=k;
+  document.getElementById('kcat').textContent=CATNL[loc.cat]||loc.cat.toUpperCase();
+  document.getElementById('knaam').textContent=loc.naam;
+  document.getElementById('kstad').textContent='📍 '+loc.stad;
+  toonURL(loc);
+  document.getElementById('kbeschr').textContent=loc.beschr;
+  document.getElementById('ktags').innerHTML=loc.tags.map(t=>`<span class="ktag" style="color:${k};border-color:${k}40">${t}</span>`).join('');
+  const alleVBN=[...VBN,...eigenVBN];
+  const vh=alleVBN.filter(v=>v.van===loc.id||v.naar===loc.id);
+  const allLoc=alleLocaties();
+  document.getElementById('kvbs').innerHTML=vh.map(v=>{
+    const o=allLoc.find(l=>l.id===(v.van===loc.id?v.naar:v.van));
+    return `<div class="kvb"><div class="kvb-met">↔ ${o?.naam||'?'}</div><div class="kvb-w">${v.label}</div></div>`;
+  }).join('');
+  // Edit/delete knoppen tonen voor eigen pins
+  const isEigen=!!loc.isEigen;
+  document.getElementById('kEditBtn').style.display=isEigen?'flex':'none';
+  document.getElementById('kDelBtn').style.display=isEigen?'flex':'none';
+  document.getElementById('editOverlay').classList.remove('open');
+  document.getElementById('kaart').classList.add('open');
+}
+function openB(vb,vL,nL){
+  document.getElementById('kband').style.background='#f0c060';
+  document.getElementById('kcat').style.color='#f0c060';
+  document.getElementById('kcat').textContent='SAMENWERKING';
+  document.getElementById('knaam').textContent=vL.naam.split('—')[0].trim()+' ↔ '+nL.naam.split('—')[0].trim();
+  document.getElementById('kstad').textContent='📍 '+vL.stad+' — '+nL.stad;
+  document.getElementById('kbeschr').textContent=vb.label;
+  document.getElementById('kurl').innerHTML='';document.getElementById('kurl').style.display='none';
+  document.getElementById('ktags').innerHTML='';
+  document.getElementById('kvbs').innerHTML='';
+  document.getElementById('kaart').classList.add('open');
+}
+function sluit(){
+  if(gesPin){gesPin.material.emissiveIntensity=gesPin.userData.baseEI||.55;
+    gesPin.material.opacity=gesPin.userData.baseOpacity||.72;}
+  document.getElementById('kaart').classList.remove('open');
+  document.getElementById('editOverlay').classList.remove('open');
+  gesPin=null;huidigeLoc=null;
+}
+
+// ================================================================
+// FILTER
+// ================================================================
+function togF(cat){
+  if(actCats.has(cat))actCats.delete(cat);else actCats.add(cat);
+  document.querySelectorAll('.fb').forEach(el=>{
+    el.classList.toggle('off',!actCats.has(el.dataset.cat));
+    el.classList.toggle('on',actCats.has(el.dataset.cat));
+  });
+  pins.forEach(m=>{if(m.userData.loc)m.visible=actCats.has(m.userData.loc.cat);});
+  herteken();
+}
+function togRot(){autoRot=!autoRot;updRB();}
+function updRB(){document.getElementById('brot').classList.toggle('on',autoRot);}
+function resetV(){doelZ=CZ[1];rotX=0;rotY=0;autoRot=true;updRB();setTrap(1);sluit();}
+
+// ================================================================
+// RESIZE
+// ================================================================
+function resize(){
+  const w=wrap.clientWidth,h=wrap.clientHeight;
+  renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();herteken();
+}
+window.addEventListener('resize',resize);resize();
+
+// ================================================================
+// LOOP
+// ================================================================
+let tt=0;
+function anim(){
+  requestAnimationFrame(anim);
+  tt+=.016;
+  if(autoRot) rotY+=.003;
+  wrapper.rotation.x=rotX; wrapper.rotation.y=rotY;
+  camera.position.z+=(doelZ-camera.position.z)*.08;
+
+  // Label overlay elke frame hertekenen zodat 2D en 3D altijd synchroon lopen
+  updZI(camera.position.z);
+  herteken();
+
+  const ps = pinSchaal();
+  pinGrp.children.forEach(obj=>{
+    if(obj.userData.isRing){
+      obj.userData.t+=.038;
+      obj.material.opacity=.06+.08*Math.sin(obj.userData.t);
+      // Ring schaalt iets groter dan kern, maar volgt dezelfde camera-Z curve
+      obj.scale.setScalar((1+.12*Math.sin(obj.userData.t*.7))*ps);
+    } else if(obj.userData.loc){
+      obj.scale.setScalar(ps);
+    }
+  });
+  boogGrp.children.forEach(b=>{if(b.userData.isBoog)b.material.opacity=.12+.08*Math.sin(tt*.65);});
+  renderer.render(scene,camera);
+}
+
+// Laadscherm wegklikken na initialisatie
+setTimeout(()=>{
+  document.getElementById('loader').style.opacity='0';
+  document.getElementById('loader').style.transition='opacity .4s';
+  setTimeout(()=>document.getElementById('loader').remove(),500);
+},400);
+
+anim(); updRB();
+
+// Initial state
+urlMode=false;
+eigenMode=false;
+document.getElementById('burl').classList.toggle('on',urlMode);
+document.getElementById('beigen').classList.toggle('on',eigenMode);
+
+</script>
+</body>
+</html>
